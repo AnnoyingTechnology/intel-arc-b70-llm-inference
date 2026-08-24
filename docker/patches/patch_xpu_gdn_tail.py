@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Split the vLLM XPU GDN prefill shape that produces non-finite output.
+"""Rejected experiment for splitting a non-finite XPU GDN prefill shape.
+
+Do not activate this patch in production. A controlled 2026-08-24 recreate
+confirmed that the patch applied with MTP4 enabled, but the five-token raw API
+probe still returned NaN and the service was rolled back. It remains here only
+to preserve the failed experiment for further scheduler/metadata analysis.
 
 The pinned ``vllm-xpu-kernels`` prefill operation is deterministic at prompt
 lengths ``64*N+5``: the final partial GDN chunk returns NaN.  During prompt

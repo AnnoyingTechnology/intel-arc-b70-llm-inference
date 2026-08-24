@@ -4,7 +4,7 @@ This Intel Arc Pro B70 was quite painful to get rolling properly, so here is wha
 
 This repository documents the reproducible Qwen3.8-27B service for one 32 GiB B70: a transparent INT4 target, MTP4 speculative decoding, FP8 KV cache, automatic prefix caching, and a persisted 210 W efficiency cap.
 
-> **Active investigation (2026-08-24):** the OpenCode token-0 (`!`) collapse is now a public synthetic XPU GDN reproducer: raw prompts fail with NaN logprobs exactly when `prompt_tokens % 64 == 5`; exhaustive 1–128-token sweeps found no other failures. This occurs before speculative verification, so MTP4 is retained and repetition penalties are irrelevant. A permanent kernel correction is not deployed yet. See [the incident report and reproducer](docs/repetition-incident.md).
+> **Active investigation (2026-08-24):** the OpenCode token-0 (`!`) collapse is now a public synthetic XPU GDN reproducer: raw prompts fail with NaN logprobs exactly when `prompt_tokens % 64 == 5`; exhaustive 1–128-token sweeps found no other failures. This occurs before speculative verification, so MTP4 is retained and repetition penalties are irrelevant. The first MTP-safe scheduler-split candidate failed its mandatory API gate and was rolled back; no correction is deployed. See [the incident report](docs/repetition-incident.md) and [maintenance result](docs/gdn-maintenance-window-2026-08-24.md).
 
 ## Result
 
@@ -79,5 +79,6 @@ The planned Huihui abliterated candidate must match the base model's quality and
 - [Research and pitfalls](docs/research-and-pitfalls.md): rejected paths and lessons.
 - [Token-0 repetition incident](docs/repetition-incident.md): exact sanitized reproducer, evidence, recovery and pending A/B.
 - [XPU GDN source audit](docs/xpu-gdn-source-audit.md): version forensics, kernel narrowing and controlled correction order.
+- [Rejected GDN maintenance trial](docs/gdn-maintenance-window-2026-08-24.md): direct probe, failed scheduler A/B and rollback gates.
 - [Huihui plan](docs/huihui-plan.md): abliterated-model A/B and promotion gate.
 - [References](docs/references.md): upstream sources and revisions.

@@ -139,5 +139,14 @@
       }
     }
   },
-  "leading_restart_ab": "Apply one isolated XPU GDN 64N+5 tail correction while retaining MTP4, then require the public 1-128 finite-logprob sweep and existing performance/quality gates."
+  "maintenance_window": {
+    "scheduler_split": "rejected_and_rolled_back",
+    "direct_operator_cases": 144,
+    "direct_operator_failures": 0,
+    "candidate_five_token_api_result": "http_400_nan",
+    "active_service_correction": "none",
+    "mtp_speculative_tokens": 4,
+    "details": "maintenance-window-20260824.json"
+  },
+  "leading_restart_ab": "Capture and replay the real five-token GDN projections and metadata, then apply one evidence-backed correction while retaining MTP4 and require the public 1-128 finite-logprob sweep before later gates."
 }

@@ -84,3 +84,10 @@ Unsloth reference artifact:
 The selected result exceeds the target 70–90 tok/s band for the standardized 128-token cells and remains near it for diversified 256-token outputs. MTP acceptance falls for longer generations, explaining the lower sustained rates.
 
 These tests catch the concrete corruption and quantization regressions found during bring-up. They do not prove universal capability, logit, safety or long-context equivalence. A base-versus-Huihui decision requires the broader, paired evaluation described in [`huihui-plan.md`](huihui-plan.md).
+
+The rejected 2026-08-24 GDN scheduler trial was rolled back before promotion.
+The restored service then passed 7/7 exact canaries, eight-repeat stability,
+prior-output hash parity, a 30,350-token needle and a 32K tool flow. Its recovery
+performance cells measured 85.07 tok/s at p512/g128 and 88.39 tok/s at
+p8192/g128, with 1,570 prompt tok/s at 8K. See
+[`gdn-maintenance-window-2026-08-24.md`](gdn-maintenance-window-2026-08-24.md).

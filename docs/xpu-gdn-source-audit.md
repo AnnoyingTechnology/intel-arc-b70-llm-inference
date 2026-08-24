@@ -1,8 +1,9 @@
 # XPU GDN `64*N+5` source audit
 
 Status on 2026-08-24: the public API reproducer is conclusive, but the exact
-faulting instruction inside the compiled XE2 kernel is not. No kernel binary
-has been replaced and the live service has not been restarted. This audit was
+faulting instruction inside the compiled XE2 kernel is not. The synthetic
+direct-operator matrix was finite and the first scheduler split failed its API
+gate, so it was rolled back. No kernel binary has been replaced. This audit was
 cross-checked against the upstream source with Claude Opus 5.
 
 ## Established boundary
@@ -118,22 +119,21 @@ without a null guard. They should not be bundled into the first A/B.
 
 ## Controlled correction order
 
-1. Enable the staged scheduler guard, which keeps MTP4 and changes only the
-   bad final prefill shape from `64*N+5` to `64*N+1` followed by four tokens.
-2. Require the exhaustive public 1--128 sweep to return finite top logprobs,
+1. Capture the real projected tensors and scheduling/GDN metadata from the
+   first five-token prefill, then replay them in the direct probe. The random
+   synthetic matrix did not reproduce the failure.
+2. Apply one evidence-backed correction while keeping MTP4. The existing
+   scheduler guard is rejected and must not be activated unchanged.
+3. Require the exhaustive public 1--128 sweep to return finite top logprobs,
    then test cold and stateful tails at 1,669 and 3,333 tokens.
 
    ```bash
    ./scripts/gdn_tail_probe.py --lengths 1-128 --expect-fixed
    ```
 
-3. Rerun cached TTFT, sustained decode, MTP acceptance and the deterministic
-   quality gate. The extra scheduler step applies to one of every 64 possible
-   prompt-length remainders and must not materially change normal throughput.
-4. Run the direct split-operator test to determine whether `causal_conv1d` or
-   `gated_delta_rule` first becomes non-finite. Immediately after
-   `causal_conv1d`, the virtual padding is still expected to be zero; gate
-   preparation mutates it only inside `gated_delta_rule`.
+4. Rerun cached TTFT, sustained decode, MTP acceptance and the deterministic
+   quality gate. Any scheduler-based correction for one of every 64 possible
+   prompt-length remainders must not materially change normal throughput.
 5. Build compile-time localization probes separately: contain padded lanes in
    the forward-output epilogues, clamp prepared padding-gate magnitude, then
    replace `sycl::native::exp` with `sycl::exp`. These are probes, not claimed
@@ -150,14 +150,16 @@ because it uses the checkpoint's real projections and gate parameters.
 
 [`gdn_operator_tail_probe.py`](../scripts/gdn_operator_tail_probe.py) implements
 that synthetic fused/split matrix and checks the zero-padding contract between
-the two operators. It must run in a disposable XPU container while the serving
-container is stopped; it has intentionally not been run concurrently with the
-live model.
+the two operators. It ran in a disposable XPU container while the serving
+container was stopped: all 144 combinations were finite and all padding checks
+passed. Real model projections or surrounding runtime state are therefore
+needed for the next direct reproducer.
 
-## Scheduler-split safety audit
+## Rejected scheduler-split audit
 
-The staged patch was reviewed against the live scheduler and GDN metadata
-builder, including an explicit Claude Opus 5 pass. It does not produce a
+Before deployment, the staged patch was reviewed against the live scheduler
+and GDN metadata builder, including an explicit Claude Opus 5 pass. Its intended
+split does not produce a
 `64+5` continuation: it subtracts the four-token lookahead, so 5, 69, 1,669
 and the incident's final 773-token step become 1+4, 65+4, 1,665+4 and 769+4.
 Every emitted query length is therefore finite under the measured rule.
@@ -174,7 +176,11 @@ chunk is a four-token tail with `has_prev_state=true`, reading and writing the
 same recurrent-state slot as the patch's second scheduler step. Finite 65 gives
 the corresponding stateful one-token-tail coverage for the first step. The
 concrete patched scheduler method also executed correctly for eight prompt,
-decode and configuration cases against the live source anchor.
+decode and configuration cases against the live source anchor. Those static and
+unit-level arguments were insufficient: after a real recreate, the five-token
+API request still produced NaN. The experiment does not reveal whether the
+guard failed to match in the live request or whether a resulting scheduler step
+still mapped to a bad internal GDN shape. Its production efficacy is falsified.
 
 The guard intentionally applies only to the final scheduled prompt chunk.
 Intermediate chunks must therefore remain a multiple of 64. Compose now pins
@@ -190,5 +196,7 @@ prefix entries. Rollback is to remove the candidate mount or restore the
 pinned image and recreate the same container; model data and the persistent
 compile cache remain untouched.
 
-No recreate is authorized by this document. The running service remains on
-the pinned package with MTP4 enabled.
+The 2026-08-24 recreate was completed and rolled back after the first mandatory
+gate failed. The running service remains on the pinned package with MTP4 enabled
+and without the scheduler patch. See
+[`gdn-maintenance-window-2026-08-24.md`](gdn-maintenance-window-2026-08-24.md).

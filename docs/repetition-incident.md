@@ -1,7 +1,8 @@
 # Long-context token-0 repetition incident
 
 Status on 2026-08-24: the trigger is reduced to a fully synthetic, deterministic
-XPU GDN kernel failure. The permanent server-side fix is not deployed. MTP4
+XPU GDN failure. The first scheduler-split candidate failed its mandatory raw
+API gate and was rolled back; no server-side correction is deployed. MTP4
 remains enabled. Do not treat a repetition penalty or disabling MTP as the fix.
 
 ## Symptom
@@ -59,6 +60,21 @@ The XPU implementation internally uses 64-token GDN chunks. The live path is
 `torch.ops._xpu_C.gdn_attention` from `vllm-xpu-kernels 0.1.12.3`. This proves
 the failure is upstream of sampling in the XPU GDN prefill path. The exact bad
 instruction inside the compiled kernel is still under source-level isolation.
+
+## Direct-operator result
+
+During the authorized maintenance window, the serving container was stopped
+and [`gdn_operator_tail_probe.py`](../scripts/gdn_operator_tail_probe.py) ran in
+a disposable container using the same pinned image. All 144 cases were finite:
+fused and split operators, FP16/BF16 activations, FP32/model-dtype recurrent
+state, reordered/non-reordered input, and the nine API-neighbor lengths. The
+split path also found no non-zero virtual padding between `causal_conv1d` and
+`gated_delta_rule`.
+
+This negative result means random projected tensors at the direct operator
+boundary do not reproduce the fault. It does not override the deterministic
+end-to-end API oracle, which uses the real checkpoint activations and runtime
+metadata.
 
 ## Private incident replay
 
@@ -171,14 +187,13 @@ The detailed static source and version audit is in
 blob is present in v0.1.12, release/v0.1.13.2 and current main; upgrading the
 whole wheel is therefore not a known source fix.
 
-The narrow scheduler candidate is staged as
-[`patch_xpu_gdn_tail.py`](../docker/patches/patch_xpu_gdn_tail.py). It changes
-only prompt processing: a final `64*N+5` scheduled prefill leaves the four known
-MTP-lookahead tokens for a second step, producing finite `64*N+1` and four-token
-calls. Its explicit prompt check excludes the normal five-token MTP4 decode
-verification group. The patch matches and compiles against the live scheduler,
-but it is intentionally not mounted or invoked by Compose until the recreate
-A/B is authorized; the running service is unchanged.
+The first narrow scheduler candidate is preserved as the rejected experiment
+[`patch_xpu_gdn_tail.py`](../docker/patches/patch_xpu_gdn_tail.py). A controlled
+recreate confirmed that it matched and patched the live scheduler while MTP4
+remained configured. It did not correct the fault: the fixed-oracle check still
+returned finite results at 4 and 6 tokens and the same NaN HTTP 400 at 5. The
+mount and invocation were removed and the service was recreated on the prior
+configuration. Do not activate this patch in production.
 
 The current vLLM checkout is
 `0.27.2rc1.dev77+gac7509e2b` (2026-08-14). Fine-grained hybrid cache primitives
@@ -212,27 +227,29 @@ the TTFT benefit of prefix caching.
 ## Next controlled fix gate
 
 1. Keep MTP4, FP8 KV, the target, draft overlay, scheduler budget and 210 W cap.
-2. Apply one isolated GDN-tail correction in a new container image or startup
-   patch. The first candidate is the staged scheduler split because it changes
-   only the proven-bad prefill shape and keeps MTP4. Do not bundle the
-   independent BF16/draft-helper cleanup into this A/B.
-3. Run the public 1–128 exhaustive sweep. Every request must return 20/20 finite
+2. Capture the real first-prefill GDN inputs and metadata for a five-token raw
+   request, without retaining response text, then replay them through the fused
+   and split direct-operator paths. This closes the gap left by the all-finite
+   random-input matrix.
+3. Apply only one evidence-backed GDN correction in a derivative image or
+   startup patch. Do not reuse the rejected scheduler split unchanged, and do
+   not bundle the independent BF16/draft-helper cleanup into this A/B.
+4. Run the public 1–128 exhaustive sweep. Every request must return 20/20 finite
    top logprobs.
 
    ```bash
    ./scripts/gdn_tail_probe.py --lengths 1-128 --expect-fixed
    ```
 
-4. Test 1,669 and 3,333 tokens cold, then reuse each namespace with a known-good
+5. Test 1,669 and 3,333 tokens cold, then reuse each namespace with a known-good
    continuation to prove that recurrent prefix state remains finite.
-5. Rerun the cached TTFT, p512/p8192 decode, MTP acceptance and deterministic
+6. Rerun the cached TTFT, p512/p8192 decode, MTP acceptance and deterministic
    quality gates. MTP must remain enabled and its acceptance must not regress.
 
-Service recreation is intentionally pending explicit authorization. Expected
-impact is roughly two minutes of local inference unavailability and loss of
-in-memory prefix entries. Rollback is to restore the pinned image/startup patch
-set and recreate the container; model data and the persistent compile cache are
-not removed.
+The failed maintenance trial and successful rollback gates are recorded in
+[`gdn-maintenance-window-2026-08-24.md`](gdn-maintenance-window-2026-08-24.md).
+Any future recreate needs a new maintenance authorization. Model data and the
+persistent compile cache are not removed by the rollback procedure.
 
 ## Upstream references
 
