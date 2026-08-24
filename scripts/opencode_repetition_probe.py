@@ -17,6 +17,7 @@ import hashlib
 import json
 import math
 import os
+import secrets
 import stat
 import threading
 import time
@@ -258,11 +259,48 @@ def _parse_completion(
 
 
 def replay(args: argparse.Namespace) -> None:
-    payload = json.loads(args.request.read_text())
+    if args.request is not None:
+        payload = json.loads(args.request.read_text())
+    elif args.synthetic_user_repeat_count is not None:
+        payload = {
+            "model": "qwen38",
+            "messages": [],
+            "reasoning_effort": "low",
+        }
+    else:
+        raise SystemExit("--request is required unless synthetic input is selected")
+    if args.synthetic_user_repeat_count is not None:
+        payload["messages"] = [
+            {
+                "role": "user",
+                "content": args.synthetic_user_repeat
+                * args.synthetic_user_repeat_count,
+            }
+        ]
+        for field in ("tools", "tool_choice", "parallel_tool_calls"):
+            payload.pop(field, None)
     if args.message_count is not None:
         payload["messages"] = payload.get("messages", [])[: args.message_count]
+    if args.append_last_content is not None:
+        messages = payload.get("messages") or []
+        if not messages or not isinstance(messages[-1].get("content"), str):
+            raise SystemExit("last message does not have string content")
+        messages[-1]["content"] += args.append_last_content
+    if args.append_last_repeat_count:
+        messages = payload.get("messages") or []
+        if not messages or not isinstance(messages[-1].get("content"), str):
+            raise SystemExit("last message does not have string content")
+        messages[-1]["content"] += (
+            args.append_last_repeat * args.append_last_repeat_count
+        )
+    if args.append_user is not None:
+        payload.setdefault("messages", []).append(
+            {"role": "user", "content": args.append_user}
+        )
     overrides = json.loads(args.overrides)
     payload.update(overrides)
+    if args.fresh_cache_salt:
+        payload["cache_salt"] = secrets.token_urlsafe(32)
     payload["stream"] = not args.non_stream
     if args.non_stream:
         payload.pop("stream_options", None)
@@ -317,7 +355,11 @@ def parser() -> argparse.ArgumentParser:
     cap.set_defaults(function=capture)
 
     rep = commands.add_parser("replay")
-    rep.add_argument("--request", type=Path, required=True)
+    rep.add_argument(
+        "--request",
+        type=Path,
+        help="Private captured request; optional with --synthetic-user-repeat-count",
+    )
     rep.add_argument("--url", default="http://127.0.0.1:19622/v1/chat/completions")
     rep.add_argument("--overrides", default="{}")
     rep.add_argument("--max-tokens", type=int, default=128)
@@ -326,7 +368,41 @@ def parser() -> argparse.ArgumentParser:
         type=int,
         help="Replay only the first N serialized messages",
     )
+    rep.add_argument(
+        "--append-user",
+        help="Append one synthetic user message after any message-count slice",
+    )
+    rep.add_argument(
+        "--append-last-content",
+        help="Append synthetic text to the final sliced message content",
+    )
+    rep.add_argument(
+        "--append-last-repeat",
+        default=" A",
+        help="Synthetic unit repeated in the final sliced message",
+    )
+    rep.add_argument(
+        "--append-last-repeat-count",
+        type=int,
+        default=0,
+        help="Number of synthetic units appended to the final sliced message",
+    )
+    rep.add_argument(
+        "--synthetic-user-repeat",
+        default=" A",
+        help="Synthetic unit used to replace the transcript with one user message",
+    )
+    rep.add_argument(
+        "--synthetic-user-repeat-count",
+        type=int,
+        help="Replace messages/tools with one repeated synthetic user message",
+    )
     rep.add_argument("--seed", type=int)
+    rep.add_argument(
+        "--fresh-cache-salt",
+        action="store_true",
+        help="Generate a private one-shot cache salt without printing it",
+    )
     rep.add_argument("--timeout", type=float, default=300)
     rep.add_argument(
         "--non-stream",

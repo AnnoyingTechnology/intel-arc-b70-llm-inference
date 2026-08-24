@@ -19,6 +19,29 @@
     "first_failure_prompt_tokens": 49925
   },
   "results": {
+    "public_synthetic_raw_completion": {
+      "prompt_content": "repeated synthetic one-token units; response text discarded",
+      "cache": "unique namespace per request",
+      "max_tokens": 1,
+      "logprobs": 20,
+      "failure_rule": "prompt_tokens % 64 == 5",
+      "neighbor_matrix": {
+        "finite": [4, 6, 68, 70, 132, 134],
+        "http_400_nan": [5, 69, 133]
+      },
+      "exhaustive_sweeps": [
+        {
+          "range": [1, 64],
+          "only_failure": 5
+        },
+        {
+          "range": [65, 128],
+          "only_failure": 69
+        }
+      ],
+      "content_variants_at_five_tokens": 5,
+      "content_variant_failures": 5
+    },
     "existing_cache_current_sampler": {
       "runs": 3,
       "failed": 3,
@@ -116,5 +139,5 @@
       }
     }
   },
-  "leading_restart_ab": "Restore the checkpoint's declared bfloat16 dtype while retaining MTP4, FP8 KV and prefix caching."
+  "leading_restart_ab": "Apply one isolated XPU GDN 64N+5 tail correction while retaining MTP4, then require the public 1-128 finite-logprob sweep and existing performance/quality gates."
 }

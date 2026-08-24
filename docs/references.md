@@ -10,6 +10,8 @@
 - [vLLM prefix-caching design](https://docs.vllm.ai/en/stable/design/prefix_caching/)
 - [Intel LLM Scaler vLLM reference commands](https://github.com/intel/llm-scaler/blob/main/vllm/README.md/)
 - [vLLM XPU Qwen3.5 optimization plan](https://github.com/vllm-project/vllm-xpu-kernels/issues/172)
+- [XPU-kernels SYCL-TLA update](https://github.com/vllm-project/vllm-xpu-kernels/pull/517) — unreleased main change advancing the kernel template dependency.
+- [SYCL-TLA Battlemage block-2D load fix](https://github.com/intel/sycl-tla/pull/846) — included by the unreleased dependency update and relevant to the active GDN `64*N+5` investigation.
 - [LM Studio runtime management](https://lmstudio.ai/docs/cli/runtime/runtime)
 - [humble-b70-llm community reference](https://github.com/JP-devv/humble-b70-llm)
 

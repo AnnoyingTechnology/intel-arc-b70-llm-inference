@@ -1,8 +1,8 @@
 # Long-context token-0 repetition incident
 
-Status on 2026-08-24: reproducible and contained, but the permanent server-side
-fix is not yet proven. MTP4 remains enabled. Do not treat a repetition penalty
-or disabling MTP as the fix.
+Status on 2026-08-24: the trigger is reduced to a fully synthetic, deterministic
+XPU GDN kernel failure. The permanent server-side fix is not deployed. MTP4
+remains enabled. Do not treat a repetition penalty or disabling MTP as the fix.
 
 ## Symptom
 
@@ -24,7 +24,43 @@ chosen logprob and 20/20 finite top logprobs. Token 0 is therefore downstream
 of a non-finite model/sampling distribution, not a legitimate maximum or a
 missing repetition penalty.
 
-## Privacy-preserving reproducer
+## Public synthetic reproducer
+
+The failure no longer needs the private OpenCode capture. On the running XPU
+service, raw completion prompts fail exactly when:
+
+```text
+prompt_tokens % 64 == 5
+```
+
+[`gdn_tail_probe.py`](../scripts/gdn_tail_probe.py) sends only repeated synthetic
+one-token units, uses a unique cache namespace for every request, requests one
+output token plus logprobs, and never prints response text:
+
+```bash
+./scripts/gdn_tail_probe.py
+```
+
+The default neighbor matrix is 4/5/6, 68/69/70 and 132/133/134 tokens. On the
+affected runtime, only 5, 69 and 133 return HTTP 400 because strict JSON
+serialization encounters `nan`; every adjacent control returns 20/20 finite top
+logprobs. Exhaustive sweeps over 1–64 and 65–128 produced no other failures.
+Five different synthetic one-token units all failed at total length five, so
+the trigger is length-dependent rather than content-dependent.
+
+These raw requests have no chat template, tools, prior prefix, resumed GDN
+state or speculative-decode metadata. MTP4 is still configured on the server,
+but the first target prefill occurs before draft verification. The equality
+between the five-token failing tail and the MTP4 verification width is therefore
+coincidental.
+
+The XPU implementation internally uses 64-token GDN chunks. The live path is
+`torch.ops.vllm.gdn_attention_core_xpu` ->
+`torch.ops._xpu_C.gdn_attention` from `vllm-xpu-kernels 0.1.12.3`. This proves
+the failure is upstream of sampling in the XPU GDN prefill path. The exact bad
+instruction inside the compiled kernel is still under source-level isolation.
+
+## Private incident replay
 
 [`opencode_repetition_probe.py`](../scripts/opencode_repetition_probe.py) can
 capture one OpenCode-compatible request through a localhost-only endpoint and
@@ -84,41 +120,51 @@ Proven:
 - A repetition penalty does not address token-0 collapse.
 - The failure contains NaN logprob data under both stochastic and greedy
   sampling; sampler tuning cannot repair non-finite upstream values.
-- Qwen's sampler plus a clean cache namespace recovers the complete current
-  session while retaining MTP4.
-- For the recovered 24-message payload, `top_k=20` alone prevents the
-  full-vocabulary failure: 3/3 cold passes while retaining `top_p=1`. This is
-  an independently proven client guardrail, not the explanation for the
-  20-message cold NaN that survives `top_k=20`.
+- Qwen's sampler plus a clean cache namespace recovered the complete current
+  session because that rendered prompt did not have the failing remainder;
+  MTP4 remained enabled.
+- The recovered 24-message payload also passed 3/3 cold runs with only
+  `top_k=20` added while retaining `top_p=1`. This supports the official sampler
+  configuration but does not establish a second root cause: the exact
+  `64*N+5` cold NaN survives `top_k=20`.
 - Reuse of state produced by the failing turn makes a later prompt fail when
   the same prompt succeeds from a cold prefill.
 
-The strongest untested cause is now the forced target dtype. The checkpoint
-declares BF16 and inspection of its embedding, normalization, GDN and LM-head
-tensors confirms BF16 storage. Compose nevertheless passes `--dtype float16`,
-and vLLM logs `Casting torch.bfloat16 to torch.float16`. This cuts the exponent
-range of every target activation. The selected Intel `XPUwNa16LinearKernel`
-explicitly supports both BF16 and FP16, so BF16 is a viable MTP-preserving A/B,
-not a backend switch.
+The original first-failure boundary had 49,925 prompt tokens:
+`49,925 = 780 * 64 + 5`. The next cold request had 49,940 tokens, remainder 20,
+and was finite. The complete 24-message request had 49,969 tokens, remainder 49,
+and was also finite in a clean namespace. Reusing state written by the failing
+request poisoned later prompts. The synthetic modulo result explains all three
+observations without relying on transcript content.
 
 OpenCode's `local-b70/qwen38` options now explicitly send the official
 `temperature=1`, `top_p=0.95`, `top_k=20` values. A localhost capture of the
 actual configured client confirmed those exact snake-case fields on the wire.
 The other OpenCode model entries were not changed.
 
+The checkpoint declares BF16 while Compose currently forces FP16. Restoring
+BF16 remains desirable as an independent fidelity test, and the draft INT4
+helpers now preserve the model dtype for their scales. It is no longer the
+leading explanation for this incident: deterministic failures at one exact
+64-token remainder, including five-token prompts, are characteristic of the
+specialized GDN chunk path rather than general FP16 overflow.
+
 Not yet proven:
 
-- Whether restoring BF16 eliminates the cold NaN and the poisoned warm prefix
-  while retaining the measured speed. It is the first restart A/B.
-- Which layer first becomes non-finite. If BF16 does not fix it, instrumentation
-  must record finite/min/max summaries after each target layer without logging
-  activations or transcript content.
-- Whether fine-grained hybrid prefix matching contributes to propagation. The
-  very recent path enabled by `--prefix-match-unit 64` remains a second A/B,
-  but it cannot by itself explain the initial cold request's NaN because that
-  request read zero cached tokens.
-- Whether draft-only INT4 contributes. It is a later A/B only if the cache
-  granularity test fails; MTP remains enabled.
+- Which operation within the compiled XPU GDN 64-token chunk first becomes
+  non-finite.
+- Whether rebuilding the same kernel source against current SYCL-TLA corrects
+  the partial tail. The installed `0.1.12.x` source pins SYCL-TLA commit
+  `cd763790` from 2026-03-18. XPU-kernels main commit `95d80c7` advances it to
+  `87f68506`, which includes SYCL-TLA PR 846's Battlemage block-2D load
+  correctness fix. No released `0.1.13.2` wheel contains that XPU-kernels
+  update. This is the leading isolated rebuild A/B, not yet a proven fix.
+- The installed release includes the earlier GDN OOB and SLM-race fixes. The
+  later XPU-kernels mixed spec/non-spec fix changes a different execution shape
+  and does not modify the failing chunk header.
+- Whether the best production correction is a kernel fix or a narrow scheduler
+  guard that splits a final `64*N+5` prefill into two safe chunks while keeping
+  the four-token MTP lookahead intact.
 
 The current vLLM checkout is
 `0.27.2rc1.dev77+gac7509e2b` (2026-08-14). Fine-grained hybrid cache primitives
@@ -129,8 +175,10 @@ acceptance and gibberish, MTP/prefix-cache/FP8 corruption, and Qwen endless
 
 ## Immediate recovery
 
-For a stuck session, send the next replay/request with both the Qwen sampler and
-a new private cache namespace:
+For a stuck session, use a new private cache namespace and ensure the newly
+rendered prompt does not contain `64*N+5` tokens. Adding text is effective only
+if tokenization actually changes the count; the earlier space and `x` controls
+merged into existing tokens and did not move the failing remainder.
 
 ```json
 {
@@ -141,29 +189,31 @@ a new private cache namespace:
 }
 ```
 
-This was repeatably successful for the complete captured session. It is a
-containment measure, not the permanent fix: a static salt can itself accumulate
-a bad state, and changing it on every turn would throw away the TTFT benefit of
-prefix caching.
+This recovered the complete captured session because that rendered prompt had
+remainder 49. A new salt alone cannot repair a cold prompt whose length still
+has remainder five. It is a containment measure, not the permanent fix: a
+static salt can accumulate bad state, and changing it on every turn throws away
+the TTFT benefit of prefix caching.
 
-## Next controlled A/B
+## Next controlled fix gate
 
-1. Change only `--dtype float16` to `--dtype bfloat16` in Compose.
-2. Recreate the single B70 container, clearing only in-memory prefix state.
-3. Keep MTP4, FP8 KV, the target, draft overlay, scheduler and 210 W cap intact.
-4. Replay the exact 20-message failure boundary cold three times, then its
-   follow-up warm three times.
-5. Replay the complete 24-message request cold and warm, and rerun the cached
-   TTFT, quality and p512/p8192 decode gates.
-6. Promote BF16 only if NaNs are gone and quality/performance pass. Otherwise
-   restore FP16 and run the same matrix after removing only
-   `--prefix-match-unit 64`.
+1. Keep MTP4, FP8 KV, the target, draft overlay, scheduler budget and 210 W cap.
+2. Apply one isolated GDN-tail correction in a new container image or startup
+   patch. The first candidate is the same `0.1.12.x` kernel source rebuilt with
+   only the current SYCL-TLA revision; do not bundle the independent
+   BF16/draft-helper cleanup into this A/B.
+3. Run the public 1–128 exhaustive sweep. Every request must return 20/20 finite
+   top logprobs.
+4. Test 1,669 and 3,333 tokens cold, then reuse each namespace with a known-good
+   continuation to prove that recurrent prefix state remains finite.
+5. Rerun the cached TTFT, p512/p8192 decode, MTP acceptance and deterministic
+   quality gates. MTP must remain enabled and its acceptance must not regress.
 
 Service recreation is intentionally pending explicit authorization. Expected
 impact is roughly two minutes of local inference unavailability and loss of
-in-memory prefix entries. Rollback is to restore the single Compose dtype and
-recreate the container; model data and the persistent compile cache are not
-removed.
+in-memory prefix entries. Rollback is to restore the pinned image/startup patch
+set and recreate the container; model data and the persistent compile cache are
+not removed.
 
 ## Upstream references
 
@@ -171,4 +221,8 @@ removed.
 - [MTP, prefix caching and FP8 KV tool-call corruption](https://github.com/vllm-project/vllm/issues/50188)
 - [Qwen endless exclamation-mark output](https://github.com/vllm-project/vllm/issues/39348)
 - [Fine-grained partial cache hits for hybrid/Mamba models](https://github.com/vllm-project/vllm/issues/45702)
+- [XPU GDN shared-local-memory race fix](https://github.com/vllm-project/vllm-xpu-kernels/pull/411)
+- [XPU GDN out-of-bounds guard](https://github.com/vllm-project/vllm-xpu-kernels/pull/439)
+- [XPU-kernels SYCL-TLA update](https://github.com/vllm-project/vllm-xpu-kernels/pull/517)
+- [SYCL-TLA Battlemage block-2D load fix](https://github.com/intel/sycl-tla/pull/846)
 - [Official Qwen3.8-27B generation configuration](https://huggingface.co/Qwen/Qwen3.8-27B/blob/main/generation_config.json)
