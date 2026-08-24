@@ -218,6 +218,11 @@ the TTFT benefit of prefix caching.
    independent BF16/draft-helper cleanup into this A/B.
 3. Run the public 1–128 exhaustive sweep. Every request must return 20/20 finite
    top logprobs.
+
+   ```bash
+   ./scripts/gdn_tail_probe.py --lengths 1-128 --expect-fixed
+   ```
+
 4. Test 1,669 and 3,333 tokens cold, then reuse each namespace with a known-good
    continuation to prove that recurrent prefix state remains finite.
 5. Rerun the cached TTFT, p512/p8192 decode, MTP acceptance and deterministic

@@ -76,7 +76,9 @@ def probe(args: argparse.Namespace, length: int) -> dict[str, Any]:
         },
         method="POST",
     )
-    expected_nan = length % args.modulus == args.remainder
+    expected_nan = (
+        not args.expect_fixed and length % args.modulus == args.remainder
+    )
     try:
         with urllib.request.urlopen(request, timeout=args.timeout) as response:
             result = json.load(response)
@@ -121,6 +123,11 @@ def main() -> None:
     )
     parser.add_argument("--modulus", type=int, default=64)
     parser.add_argument("--remainder", type=int, default=5)
+    parser.add_argument(
+        "--expect-fixed",
+        action="store_true",
+        help="require every requested length to return finite logprobs",
+    )
     parser.add_argument("--timeout", type=float, default=60)
     args = parser.parse_args()
 
@@ -137,7 +144,9 @@ def main() -> None:
             {
                 "requests": len(results),
                 "expected_failure_rule": (
-                    f"prompt_tokens % {args.modulus} == {args.remainder}"
+                    "none (fixed)"
+                    if args.expect_fixed
+                    else f"prompt_tokens % {args.modulus} == {args.remainder}"
                 ),
                 "unexpected_lengths": unexpected,
             },

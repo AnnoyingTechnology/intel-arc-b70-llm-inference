@@ -60,6 +60,10 @@ Automatic tool selection is enabled server-side with vLLM's `qwen3_coder` parser
 
 Automatic prefix caching is enabled with SHA-256 keys and a 64-token prefix-match unit. Repeated conversations and tool-call follow-ups can reuse cached context inside the XPU hybrid cache's larger physical blocks; cold, unrelated prompts still pay normal prefill cost. Cache entries are in-memory and disappear when the service restarts.
 
+The 8,192-token scheduler budget is deliberately literal and divisible by 64.
+Do not reintroduce an environment override or set a long-prefill threshold with
+remainder five modulo 64 while the staged tail guard remains final-chunk-only.
+
 **Known issue:** the XPU GDN prefill path returns non-finite logits exactly when
 the scheduled prompt length has remainder five modulo its 64-token kernel
 chunk. A public raw-completion probe reproduces this at 5, 69 and 133 tokens;

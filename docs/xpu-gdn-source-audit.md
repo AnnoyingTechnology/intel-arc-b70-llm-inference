@@ -84,20 +84,32 @@ branches or in an earlier shared stage:
 - the state update using the partial chunk; or
 - a block-2D load/store or register reorder whose surface height is five.
 
-The leading source hypothesis is the `O2` epilogue in
-`chunk_gated_delta_rule_kernels_xe2.hpp`: it evaluates the complete 64-row MMA
-fragment but masks only `m < n`; it does not explicitly zero
-`m >= current_chunk_size` before `reorder()` and the bounded block-2D store.
-That makes correctness depend on padded DPAS rows and the five-row block-2D
-surface being discarded perfectly. Adding the missing row guard is a narrow
-compile-time experiment with no effect on complete chunks or MTP.
+An initial hypothesis blamed unmasked padded rows in the `O2` epilogue. The
+neighbor controls falsify that as a root-cause explanation: the same padded
+rows exist for four- and six-token tails, a row guard cannot affect any valid
+row, and both controls are finite. The guard may be safe as an instrumentation
+probe, but it is not a justified fix.
 
-This is not yet the proven instruction. In particular, source inspection alone
-does not explain why the neighboring four- and six-row surfaces are finite.
-The exact five-row invariant makes a surface/layout interaction more plausible
-than ordinary numerical overflow. The kernel needs stage-by-stage finiteness
-instrumentation or isolated patched binaries to promote the hypothesis to a
-root cause.
+The second source pass established several useful negative results:
+
+- Block-2D bounds are built from the runtime tensor shape; hardware clamps
+  partial loads and stores for every tail size.
+- Register `reorder()` and the MMA layouts are static permutations independent
+  of `current_chunk_size`.
+- Gate preparation does transform padding slots, but backward subtraction
+  excludes later padding from the last valid cumsum. A magnitude explanation
+  is also monotonic in the wrong direction: a four-token tail has more padding
+  than the failing five-token tail and is finite.
+- The padded inverse block is identity and algebraically decoupled from the
+  valid block.
+
+No visible C++ or SYCL-TLA rule found so far distinguishes exactly five rows
+from four and six. The remaining leading class is therefore below the
+statically visible algorithm: XE2 DPAS/block-2D code generation or a compiler
+fast-math scheduling artifact for that exact partial surface. The forward
+output kernel is still worth isolating because it is common to fresh and
+stateful failures and uniquely uses `sycl::native::exp`, but that is a hardware
+A/B hypothesis rather than a root-cause claim.
 
 Secondary source hazards are real but cannot explain the fresh five-token
 case: a local-space-only barrier orders a global `u` write before a global read
@@ -110,21 +122,65 @@ without a null guard. They should not be bundled into the first A/B.
    bad final prefill shape from `64*N+5` to `64*N+1` followed by four tokens.
 2. Require the exhaustive public 1--128 sweep to return finite top logprobs,
    then test cold and stateful tails at 1,669 and 3,333 tokens.
+
+   ```bash
+   ./scripts/gdn_tail_probe.py --lengths 1-128 --expect-fixed
+   ```
+
 3. Rerun cached TTFT, sustained decode, MTP acceptance and the deterministic
    quality gate. The extra scheduler step applies to one of every 64 possible
    prompt-length remainders and must not materially change normal throughput.
-4. Separately A/B the official main GDN shared library. This tests the newer
+4. Run the direct split-operator test to determine whether `causal_conv1d` or
+   `gated_delta_rule` first becomes non-finite. Immediately after
+   `causal_conv1d`, the virtual padding is still expected to be zero; gate
+   preparation mutates it only inside `gated_delta_rule`.
+5. Build compile-time localization probes separately: contain padded lanes in
+   the forward-output epilogues, clamp prepared padding-gate magnitude, then
+   replace `sycl::native::exp` with `sycl::exp`. These are probes, not claimed
+   fixes; each needs its own off/on binary and exact neighbor matrix.
+6. Separately A/B the official main GDN shared library. This tests the newer
    build dependency/compiler while holding vLLM and its operator interface
-   fixed; source parity means it is lower priority than the scheduler guard.
-5. Build the explicit padded-row kernel guard and a stage-localizing unit test.
-   If it fixes the exact matrix, prefer and upstream that kernel correction,
-   then remove the scheduler workaround.
+   fixed; source parity makes it a lower-priority probe.
 
 The direct operator test must use a single prefill sequence at the real
 16/48/128/128 shape, sweep 4/5/6, 68/69/70 and 132/133/134 in FP16 and BF16,
 and assert finiteness after `causal_conv1d`, after `gated_delta_rule`, and in
 the recurrent state. The end-to-end API sweep remains the acceptance test
 because it uses the checkpoint's real projections and gate parameters.
+
+[`gdn_operator_tail_probe.py`](../scripts/gdn_operator_tail_probe.py) implements
+that synthetic fused/split matrix and checks the zero-padding contract between
+the two operators. It must run in a disposable XPU container while the serving
+container is stopped; it has intentionally not been run concurrently with the
+live model.
+
+## Scheduler-split safety audit
+
+The staged patch was reviewed against the live scheduler and GDN metadata
+builder, including an explicit Claude Opus 5 pass. It does not produce a
+`64+5` continuation: it subtracts the four-token lookahead, so 5, 69, 1,669
+and the incident's final 773-token step become 1+4, 65+4, 1,665+4 and 769+4.
+Every emitted query length is therefore finite under the measured rule.
+
+The four-token second step remains a non-spec prefill. Before the prompt is
+complete, the request has no scheduled speculative token IDs; the GDN metadata
+builder takes its non-spec branch and classifies every query length greater
+than one as prefill. `max_num_seqs=1` also prevents a different request's spec
+decode from sharing that batch. This closes the apparent MTP4 classification
+risk without disabling MTP.
+
+The finite 68-token control gives direct stateful coverage: its second internal
+chunk is a four-token tail with `has_prev_state=true`, reading and writing the
+same recurrent-state slot as the patch's second scheduler step. Finite 65 gives
+the corresponding stateful one-token-tail coverage for the first step. The
+concrete patched scheduler method also executed correctly for eight prompt,
+decode and configuration cases against the live source anchor.
+
+The guard intentionally applies only to the final scheduled prompt chunk.
+Intermediate chunks must therefore remain a multiple of 64. Compose now pins
+`max_num_batched_tokens` literally to 8,192 instead of allowing an environment
+override; any future batch-budget or long-prefill-threshold change must retain
+that divisibility or broaden and revalidate the guard.
 
 ## Runtime boundary
 
