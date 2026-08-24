@@ -79,6 +79,33 @@
       "elapsed_seconds": 3.272,
       "output_tokens": 32,
       "repeated_bangs": 0
+    },
+    "failure_boundary_logprobs_qwen_sampler": {
+      "prompt_tokens": 49925,
+      "cached_tokens": 0,
+      "http_status": 400,
+      "error_class": "non_finite_nan_json_serialization"
+    },
+    "failure_boundary_logprobs_greedy": {
+      "prompt_tokens": 49925,
+      "cached_tokens": 0,
+      "http_status": 400,
+      "error_class": "non_finite_nan_json_serialization"
+    },
+    "recovery_followup_logprobs_qwen_sampler": {
+      "prompt_tokens": 49940,
+      "cached_tokens": 0,
+      "chosen_logprobs": {
+        "count": 1,
+        "finite": 1
+      },
+      "top_logprobs": {
+        "count": 20,
+        "finite": 20,
+        "min": -6.469358444213867,
+        "max": -0.5318584442138672
+      }
     }
-  }
+  },
+  "leading_restart_ab": "Restore the checkpoint's declared bfloat16 dtype while retaining MTP4, FP8 KV and prefix caching."
 }

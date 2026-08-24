@@ -46,6 +46,7 @@ With automatic prefix caching, hybrid GDN/attention page alignment changes repor
 - The pinned runtime already selects its XPU GDN custom operation. Qwen3.8 still has 16 full-attention layers without sliding-window attention; long cold prefill remains a real upstream/kernel and algorithmic optimization target.
 - Prefix cache is in memory. Server recreation, model replacement, or changes near the beginning of the system prompt/tool schema invalidate reuse.
 - A long OpenCode tool-use session exposed a cache-correctness failure: the same follow-up was coherent after cold prefill but collapsed to token ID 0 (`!`) after reusing 48,256 tokens cached by the failed turn. Repetition penalties through 1.20 did nothing. See [`repetition-incident.md`](repetition-incident.md); `--prefix-match-unit 64` is now a suspect pending a controlled MTP-preserving A/B, not an established safe optimization.
+- The failing request's logprob response contains NaN under both Qwen sampling and greedy decoding; its cold follow-up has finite logprobs. The checkpoint is BF16, but the service currently forces FP16 despite Intel W4A16 supporting both activation dtypes. Restoring BF16 is the first pending end-to-end A/B; fine-grained prefix matching is second because it cannot explain a zero-cache-hit cold NaN.
 
 ## Power-sweep pitfalls
 

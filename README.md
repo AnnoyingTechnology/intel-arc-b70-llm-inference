@@ -4,7 +4,7 @@ This Intel Arc Pro B70 was quite painful to get rolling properly, so here is wha
 
 This repository documents the reproducible Qwen3.8-27B service for one 32 GiB B70: a transparent INT4 target, MTP4 speculative decoding, FP8 KV cache, automatic prefix caching, and a persisted 210 W efficiency cap.
 
-> **Active investigation (2026-08-24):** a real 49.9K-token OpenCode session reproducibly exposed token-0 (`!`) collapse and a damaged reusable hybrid prefix state. MTP4 is retained; repetition penalty is falsified. A clean cache namespace plus Qwen's official sampler recovers the complete session, while the permanent prefix-cache fix is being isolated. See [the sanitized incident report](docs/repetition-incident.md).
+> **Active investigation (2026-08-24):** a real 49.9K-token OpenCode session reproducibly exposed NaN logprobs, token-0 (`!`) collapse and a damaged reusable hybrid prefix state. MTP4 is retained; repetition penalty is falsified. A clean cache namespace plus Qwen's official sampler recovers the complete session. Restoring the BF16 checkpoint's native dtype is the first pending end-to-end A/B. See [the sanitized incident report](docs/repetition-incident.md).
 
 ## Result
 

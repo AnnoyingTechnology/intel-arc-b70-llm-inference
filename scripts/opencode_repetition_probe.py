@@ -69,6 +69,36 @@ def _max_run(text: str, needle: str = "!") -> int:
     return maximum
 
 
+def _numeric_summary(values: list[float]) -> dict[str, Any]:
+    finite = [value for value in values if math.isfinite(value)]
+    return {
+        "count": len(values),
+        "finite": len(finite),
+        "nan": sum(math.isnan(value) for value in values),
+        "positive_inf": sum(value == math.inf for value in values),
+        "negative_inf": sum(value == -math.inf for value in values),
+        "min": min(finite) if finite else None,
+        "max": max(finite) if finite else None,
+    }
+
+
+def _logprob_summary(items: list[dict[str, Any]]) -> dict[str, Any]:
+    chosen_logprobs: list[float] = []
+    top_logprobs: list[float] = []
+    for item in items:
+        value = item.get("logprob")
+        if isinstance(value, (int, float)):
+            chosen_logprobs.append(float(value))
+        for top in item.get("top_logprobs") or []:
+            value = top.get("logprob")
+            if isinstance(value, (int, float)):
+                top_logprobs.append(float(value))
+    return {
+        "chosen": _numeric_summary(chosen_logprobs),
+        "top": _numeric_summary(top_logprobs),
+    }
+
+
 def _payload_summary(payload: dict[str, Any]) -> dict[str, Any]:
     messages = payload.get("messages") or []
     message_text = list(_walk_strings(messages))
@@ -185,8 +215,7 @@ def _parse_sse(
     content: list[str] = []
     reasoning: list[str] = []
     usage = None
-    chosen_logprobs: list[float] = []
-    top_logprobs: list[float] = []
+    logprob_items: list[dict[str, Any]] = []
     for line in raw.decode("utf-8", errors="replace").splitlines():
         if not line.startswith("data: ") or line == "data: [DONE]":
             continue
@@ -196,35 +225,35 @@ def _parse_sse(
             delta = choice.get("delta") or {}
             content.append(delta.get("content") or "")
             reasoning.append(delta.get("reasoning_content") or delta.get("reasoning") or "")
-            for item in ((choice.get("logprobs") or {}).get("content") or []):
-                value = item.get("logprob")
-                if isinstance(value, (int, float)):
-                    chosen_logprobs.append(float(value))
-                for top in item.get("top_logprobs") or []:
-                    value = top.get("logprob")
-                    if isinstance(value, (int, float)):
-                        top_logprobs.append(float(value))
-
-    def numeric_summary(values: list[float]) -> dict[str, Any]:
-        finite = [value for value in values if math.isfinite(value)]
-        return {
-            "count": len(values),
-            "finite": len(finite),
-            "nan": sum(math.isnan(value) for value in values),
-            "positive_inf": sum(value == math.inf for value in values),
-            "negative_inf": sum(value == -math.inf for value in values),
-            "min": min(finite) if finite else None,
-            "max": max(finite) if finite else None,
-        }
+            logprob_items.extend((choice.get("logprobs") or {}).get("content") or [])
 
     return (
         "".join(content),
         "".join(reasoning),
         usage,
-        {
-            "chosen": numeric_summary(chosen_logprobs),
-            "top": numeric_summary(top_logprobs),
-        },
+        _logprob_summary(logprob_items),
+    )
+
+
+def _parse_completion(
+    raw: bytes,
+) -> tuple[str, str, dict[str, Any] | None, dict[str, Any]]:
+    response = json.loads(raw)
+    content: list[str] = []
+    reasoning: list[str] = []
+    logprob_items: list[dict[str, Any]] = []
+    for choice in response.get("choices") or []:
+        message = choice.get("message") or {}
+        content.append(message.get("content") or "")
+        reasoning.append(
+            message.get("reasoning_content") or message.get("reasoning") or ""
+        )
+        logprob_items.extend((choice.get("logprobs") or {}).get("content") or [])
+    return (
+        "".join(content),
+        "".join(reasoning),
+        response.get("usage"),
+        _logprob_summary(logprob_items),
     )
 
 
@@ -234,8 +263,11 @@ def replay(args: argparse.Namespace) -> None:
         payload["messages"] = payload.get("messages", [])[: args.message_count]
     overrides = json.loads(args.overrides)
     payload.update(overrides)
-    payload["stream"] = True
-    payload["stream_options"] = {"include_usage": True}
+    payload["stream"] = not args.non_stream
+    if args.non_stream:
+        payload.pop("stream_options", None)
+    else:
+        payload["stream_options"] = {"include_usage": True}
     payload["max_tokens"] = args.max_tokens
     if args.seed is not None:
         payload["seed"] = args.seed
@@ -254,7 +286,8 @@ def replay(args: argparse.Namespace) -> None:
         detail = error.read().decode("utf-8", errors="replace")[:1000]
         raise SystemExit(f"HTTP {error.code}: {detail}") from error
     elapsed = time.monotonic() - started
-    content, reasoning, usage, logprobs = _parse_sse(raw)
+    parser_function = _parse_completion if args.non_stream else _parse_sse
+    content, reasoning, usage, logprobs = parser_function(raw)
     combined = reasoning + content
     result = {
         **_payload_summary(payload),
@@ -295,6 +328,11 @@ def parser() -> argparse.ArgumentParser:
     )
     rep.add_argument("--seed", type=int)
     rep.add_argument("--timeout", type=float, default=300)
+    rep.add_argument(
+        "--non-stream",
+        action="store_true",
+        help="Use a non-streaming response; useful for bounded logprob probes",
+    )
     rep.set_defaults(function=replay)
     return root
 

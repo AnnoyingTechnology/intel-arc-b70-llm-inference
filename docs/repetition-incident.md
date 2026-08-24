@@ -16,6 +16,14 @@ token-0 collapse, not a normal prose loop. During affected requests, all four
 MTP draft positions had 0% acceptance while the target continued emitting the
 same token.
 
+A one-token non-streaming request with `logprobs=true` made the failure
+explicit: vLLM returned HTTP 400 because the response contained `nan`, which
+its strict JSON serializer rejected. The result was unchanged at temperature
+0. The identical probe on the succeeding cold follow-up returned one finite
+chosen logprob and 20/20 finite top logprobs. Token 0 is therefore downstream
+of a non-finite model/sampling distribution, not a legitimate maximum or a
+missing repetition penalty.
+
 ## Privacy-preserving reproducer
 
 [`opencode_repetition_probe.py`](../scripts/opencode_repetition_probe.py) can
@@ -48,6 +56,9 @@ isolated prefix-cache namespace without disabling caching.
 | First recovery message, Qwen sampler | cold unique namespace | coherent; 0 repeated `!` |
 | First recovery message after caching the failed boundary | warm, 48,256-token hit | emitted 32/32 `!` |
 | Next recovery message after caching a successful request | warm, 48,256-token hit | coherent; 0 repeated `!` |
+| First-failure boundary with logprobs, Qwen sampler | cold | HTTP 400: response contains `nan` |
+| First-failure boundary with logprobs, greedy | cold | HTTP 400: response contains `nan` |
+| First recovery message with logprobs, Qwen sampler | cold | chosen 1/1 finite; top 20/20 finite |
 
 The controlled failed-then-follow-up pair is the strongest result:
 
@@ -70,19 +81,32 @@ Proven:
 - The UI is not required to reproduce the failure.
 - The aborted `!` output is not poisoning the serialized chat history.
 - A repetition penalty does not address token-0 collapse.
+- The failure contains NaN logprob data under both stochastic and greedy
+  sampling; sampler tuning cannot repair non-finite upstream values.
 - Qwen's sampler plus a clean cache namespace recovers the complete current
   session while retaining MTP4.
 - Reuse of state produced by the failing turn makes a later prompt fail when
   the same prompt succeeds from a cold prefill.
 
+The strongest untested cause is now the forced target dtype. The checkpoint
+declares BF16 and inspection of its embedding, normalization, GDN and LM-head
+tensors confirms BF16 storage. Compose nevertheless passes `--dtype float16`,
+and vLLM logs `Casting torch.bfloat16 to torch.float16`. This cuts the exponent
+range of every target activation. The selected Intel `XPUwNa16LinearKernel`
+explicitly supports both BF16 and FP16, so BF16 is a viable MTP-preserving A/B,
+not a backend switch.
+
 Not yet proven:
 
-- Which server feature writes the invalid reusable state. The leading suspect
-  is the interaction among MTP, Qwen's hybrid GDN state and vLLM's very recent
-  fine-grained hybrid prefix-cache path enabled by `--prefix-match-unit 64`.
-- Whether removing only the 64-token fine matching fixes the reproducer while
-  preserving coarse prefix caching and MTP4. This requires one controlled
-  service recreation and cold/warm replay matrix.
+- Whether restoring BF16 eliminates the cold NaN and the poisoned warm prefix
+  while retaining the measured speed. It is the first restart A/B.
+- Which layer first becomes non-finite. If BF16 does not fix it, instrumentation
+  must record finite/min/max summaries after each target layer without logging
+  activations or transcript content.
+- Whether fine-grained hybrid prefix matching contributes to propagation. The
+  very recent path enabled by `--prefix-match-unit 64` remains a second A/B,
+  but it cannot by itself explain the initial cold request's NaN because that
+  request read zero cached tokens.
 - Whether draft-only INT4 contributes. It is a later A/B only if the cache
   granularity test fails; MTP remains enabled.
 
@@ -114,20 +138,20 @@ prefix caching.
 
 ## Next controlled A/B
 
-1. Remove only `--prefix-match-unit 64` from Compose.
+1. Change only `--dtype float16` to `--dtype bfloat16` in Compose.
 2. Recreate the single B70 container, clearing only in-memory prefix state.
 3. Keep MTP4, FP8 KV, the target, draft overlay, scheduler and 210 W cap intact.
 4. Replay the exact 20-message failure boundary cold three times, then its
    follow-up warm three times.
 5. Replay the complete 24-message request cold and warm, and rerun the cached
-   TTFT benchmark.
-6. Promote the change only if corruption is gone and the TTFT regression is
-   acceptable; otherwise restore the flag and test the next MTP-preserving
-   isolation layer.
+   TTFT, quality and p512/p8192 decode gates.
+6. Promote BF16 only if NaNs are gone and quality/performance pass. Otherwise
+   restore FP16 and run the same matrix after removing only
+   `--prefix-match-unit 64`.
 
 Service recreation is intentionally pending explicit authorization. Expected
 impact is roughly two minutes of local inference unavailability and loss of
-in-memory prefix entries. Rollback is to restore the single Compose argument and
+in-memory prefix entries. Rollback is to restore the single Compose dtype and
 recreate the container; model data and the persistent compile cache are not
 removed.
 
