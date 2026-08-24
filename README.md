@@ -1,6 +1,8 @@
 # Intel Arc Pro B70 local inference
 
-A reproducible, quality-gated Qwen3.8-27B service for one 32 GiB Intel Arc Pro B70. It uses vLLM XPU, a transparent INT4 target, MTP4 speculative decoding, FP8 KV cache, automatic prefix caching, and a persisted 210 W efficiency cap.
+This Intel Arc Pro B70 was quite painful to get rolling properly, so here is what GPT-5.6-sol brute-forced with me. A vanilla LM Studio/llama.cpp Vulkan setup produced a measly ~10 tok/s even with MTP; the final quality-gated vLLM/XPU configuration reaches 80–119 tok/s depending on workload.
+
+This repository documents the reproducible Qwen3.8-27B service for one 32 GiB B70: a transparent INT4 target, MTP4 speculative decoding, FP8 KV cache, automatic prefix caching, and a persisted 210 W efficiency cap.
 
 ## Result
 
