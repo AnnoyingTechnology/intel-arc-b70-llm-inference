@@ -166,6 +166,15 @@ Not yet proven:
   guard that splits a final `64*N+5` prefill into two safe chunks while keeping
   the four-token MTP lookahead intact.
 
+The narrow scheduler candidate is staged as
+[`patch_xpu_gdn_tail.py`](../docker/patches/patch_xpu_gdn_tail.py). It changes
+only prompt processing: a final `64*N+5` scheduled prefill leaves the four known
+MTP-lookahead tokens for a second step, producing finite `64*N+1` and four-token
+calls. Its explicit prompt check excludes the normal five-token MTP4 decode
+verification group. The patch matches and compiles against the live scheduler,
+but it is intentionally not mounted or invoked by Compose until the recreate
+A/B is authorized; the running service is unchanged.
+
 The current vLLM checkout is
 `0.27.2rc1.dev77+gac7509e2b` (2026-08-14). Fine-grained hybrid cache primitives
 landed only in June/July 2026, followed by multiple cache correctness fixes.

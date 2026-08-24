@@ -74,6 +74,13 @@ Changing the salt isolates damaged state but does not repair a cold request at
 the failing remainder. Do not persist or publish the salt, and do not mistake
 this procedure for the pending server-side fix. MTP4 remains enabled.
 
+The MTP-preserving scheduler workaround is staged at
+[`patch_xpu_gdn_tail.py`](../docker/patches/patch_xpu_gdn_tail.py), but Compose
+does not mount or run it. Do not assume it is active. Its source anchor and
+syntax pass against the live vLLM tree; enabling it still requires a controlled
+single-container recreate followed by the complete finite-logprob and
+performance/quality gate in the incident report.
+
 ## Power cap
 
 The selected 210 W cap is independent of the container and persists at boot:
