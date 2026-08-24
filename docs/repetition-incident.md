@@ -155,16 +155,21 @@ Not yet proven:
   non-finite.
 - Whether rebuilding the same kernel source against current SYCL-TLA corrects
   the partial tail. The installed `0.1.12.x` source pins SYCL-TLA commit
-  `cd763790` from 2026-03-18. XPU-kernels main commit `95d80c7` advances it to
-  `87f68506`, which includes SYCL-TLA PR 846's Battlemage block-2D load
-  correctness fix. No released `0.1.13.2` wheel contains that XPU-kernels
-  update. This is the leading isolated rebuild A/B, not yet a proven fix.
+  `cd763790`; XPU-kernels main advances it to `87f68506`. PR 846 in that newer
+  revision restores BMG load cache controls and block-height selection which
+  already match the old pin, so it is not direct evidence of a fix. A newer
+  dependency/compiler A/B remains useful but is no longer the leading change.
 - The installed release includes the earlier GDN OOB and SLM-race fixes. The
   later XPU-kernels mixed spec/non-spec fix changes a different execution shape
   and does not modify the failing chunk header.
 - Whether the best production correction is a kernel fix or a narrow scheduler
   guard that splits a final `64*N+5` prefill into two safe chunks while keeping
   the four-token MTP lookahead intact.
+
+The detailed static source and version audit is in
+[`xpu-gdn-source-audit.md`](xpu-gdn-source-audit.md). The same XE2 GDN source
+blob is present in v0.1.12, release/v0.1.13.2 and current main; upgrading the
+whole wheel is therefore not a known source fix.
 
 The narrow scheduler candidate is staged as
 [`patch_xpu_gdn_tail.py`](../docker/patches/patch_xpu_gdn_tail.py). It changes
@@ -208,9 +213,9 @@ the TTFT benefit of prefix caching.
 
 1. Keep MTP4, FP8 KV, the target, draft overlay, scheduler budget and 210 W cap.
 2. Apply one isolated GDN-tail correction in a new container image or startup
-   patch. The first candidate is the same `0.1.12.x` kernel source rebuilt with
-   only the current SYCL-TLA revision; do not bundle the independent
-   BF16/draft-helper cleanup into this A/B.
+   patch. The first candidate is the staged scheduler split because it changes
+   only the proven-bad prefill shape and keeps MTP4. Do not bundle the
+   independent BF16/draft-helper cleanup into this A/B.
 3. Run the public 1–128 exhaustive sweep. Every request must return 20/20 finite
    top logprobs.
 4. Test 1,669 and 3,333 tokens cold, then reuse each namespace with a known-good

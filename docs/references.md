@@ -11,7 +11,8 @@
 - [Intel LLM Scaler vLLM reference commands](https://github.com/intel/llm-scaler/blob/main/vllm/README.md/)
 - [vLLM XPU Qwen3.5 optimization plan](https://github.com/vllm-project/vllm-xpu-kernels/issues/172)
 - [XPU-kernels SYCL-TLA update](https://github.com/vllm-project/vllm-xpu-kernels/pull/517) — unreleased main change advancing the kernel template dependency.
-- [SYCL-TLA Battlemage block-2D load fix](https://github.com/intel/sycl-tla/pull/846) — included by the unreleased dependency update and relevant to the active GDN `64*N+5` investigation.
+- [SYCL-TLA Battlemage block-2D load fix](https://github.com/intel/sycl-tla/pull/846) — included by the unreleased dependency update, but it restores BMG behavior already present in the pinned older revision and is not a known `64*N+5` fix.
+- [XPU-kernels main wheel used for the pending binary A/B](https://github.com/vllm-project/vllm-xpu-kernels/actions/runs/32692290527) — commit `baaa05bb4`, artifact `9508328924`; source parity and hashes are recorded in the source audit.
 - [LM Studio runtime management](https://lmstudio.ai/docs/cli/runtime/runtime)
 - [humble-b70-llm community reference](https://github.com/JP-devv/humble-b70-llm)
 

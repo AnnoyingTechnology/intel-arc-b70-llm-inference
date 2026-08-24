@@ -78,5 +78,6 @@ The planned Huihui abliterated candidate must match the base model's quality and
 - [Benchmarks and quality](docs/benchmarks-and-quality.md): complete evidence and caveats.
 - [Research and pitfalls](docs/research-and-pitfalls.md): rejected paths and lessons.
 - [Token-0 repetition incident](docs/repetition-incident.md): exact sanitized reproducer, evidence, recovery and pending A/B.
+- [XPU GDN source audit](docs/xpu-gdn-source-audit.md): version forensics, kernel narrowing and controlled correction order.
 - [Huihui plan](docs/huihui-plan.md): abliterated-model A/B and promotion gate.
 - [References](docs/references.md): upstream sources and revisions.
