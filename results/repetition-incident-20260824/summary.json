@@ -43,6 +43,15 @@
       "output_tokens_per_run": 32,
       "repeated_bangs": 0
     },
+    "full_payload_cold_top_k_20_only": {
+      "runs": 3,
+      "failed": 0,
+      "temperature": 1.0,
+      "top_p": 1.0,
+      "top_k": 20,
+      "output_tokens_per_run": 32,
+      "repeated_bangs": 0
+    },
     "full_payload_warm_clean_namespace": {
       "runs": 3,
       "failed": 0,

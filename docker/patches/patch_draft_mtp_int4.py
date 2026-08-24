@@ -75,7 +75,9 @@ def quantize_to_int4(weight: torch.Tensor, group_size: int = 128):
         wc = weight[i : i + chunk].float()
         wg = wc.view(wc.shape[0], num_groups, group_size)
         maxabs = wg.abs().amax(dim=-1)
-        scale = maxabs / 7.0
+        # An exactly-zero group otherwise computes 0/0 below. Keep its
+        # quantized weights at zero with a neutral, representable scale.
+        scale = torch.where(maxabs > 0, maxabs / 7.0, torch.ones_like(maxabs))
         q = (wg / scale.unsqueeze(-1)).round().clamp(-8, 7).to(torch.int32)
         stored = q + 8
         qv = stored.view(wc.shape[0], num_groups, group_size // 8, 8)
@@ -129,8 +131,6 @@ class _B70MTPInt4LinearMethod:
 
     def apply(self, layer, x, bias):
         flat = x.reshape(-1, x.shape[-1])
-        if flat.dtype != torch.float16:
-            flat = flat.to(torch.float16)
         out = torch.ops._xpu_C.int4_gemm_w4a16(
             flat, self.qweight, None, self.scales, self.qzeros,
             self.group_size, None,

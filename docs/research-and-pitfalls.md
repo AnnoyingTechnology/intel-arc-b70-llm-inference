@@ -47,6 +47,7 @@ With automatic prefix caching, hybrid GDN/attention page alignment changes repor
 - Prefix cache is in memory. Server recreation, model replacement, or changes near the beginning of the system prompt/tool schema invalidate reuse.
 - A long OpenCode tool-use session exposed a cache-correctness failure: the same follow-up was coherent after cold prefill but collapsed to token ID 0 (`!`) after reusing 48,256 tokens cached by the failed turn. Repetition penalties through 1.20 did nothing. See [`repetition-incident.md`](repetition-incident.md); `--prefix-match-unit 64` is now a suspect pending a controlled MTP-preserving A/B, not an established safe optimization.
 - The failing request's logprob response contains NaN under both Qwen sampling and greedy decoding; its cold follow-up has finite logprobs. The checkpoint is BF16, but the service currently forces FP16 despite Intel W4A16 supporting both activation dtypes. Restoring BF16 is the first pending end-to-end A/B; fine-grained prefix matching is second because it cannot explain a zero-cache-hit cold NaN.
+- OpenCode option names matter: `topP`/`topK` were forwarded as unknown custom fields, while `top_p` remained 1 and `top_k` was absent. Snake-case `top_p`/`top_k` were verified on the wire. On the complete recovered payload, adding only `top_k=20` changed 3/3 cold failures to 3/3 passes; it remains a guardrail because the original cold NaN ignores it.
 
 ## Power-sweep pitfalls
 

@@ -52,6 +52,7 @@ isolated prefix-cache namespace without disabling caching.
 | Same payload, repetition penalty 1.01 through 1.20 | existing | every run emitted 96/96 `!` |
 | Exact 24-message payload, Qwen sampler | cold unique namespace | 3/3 coherent; 0 repeated `!` |
 | Same clean namespace reused | warm | 3/3 coherent and byte-identical |
+| Exact 24-message payload, `top_k=20` only (`top_p=1`) | cold unique namespace | 3/3 coherent; 0 repeated `!` |
 | First-failure 20-message boundary, Qwen sampler | cold unique namespace | reproducibly emitted only `!` |
 | First recovery message, Qwen sampler | cold unique namespace | coherent; 0 repeated `!` |
 | First recovery message after caching the failed boundary | warm, 48,256-token hit | emitted 32/32 `!` |
@@ -85,6 +86,10 @@ Proven:
   sampling; sampler tuning cannot repair non-finite upstream values.
 - Qwen's sampler plus a clean cache namespace recovers the complete current
   session while retaining MTP4.
+- For the recovered 24-message payload, `top_k=20` alone prevents the
+  full-vocabulary failure: 3/3 cold passes while retaining `top_p=1`. This is
+  an independently proven client guardrail, not the explanation for the
+  20-message cold NaN that survives `top_k=20`.
 - Reuse of state produced by the failing turn makes a later prompt fail when
   the same prompt succeeds from a cold prefill.
 
@@ -95,6 +100,11 @@ and vLLM logs `Casting torch.bfloat16 to torch.float16`. This cuts the exponent
 range of every target activation. The selected Intel `XPUwNa16LinearKernel`
 explicitly supports both BF16 and FP16, so BF16 is a viable MTP-preserving A/B,
 not a backend switch.
+
+OpenCode's `local-b70/qwen38` options now explicitly send the official
+`temperature=1`, `top_p=0.95`, `top_k=20` values. A localhost capture of the
+actual configured client confirmed those exact snake-case fields on the wire.
+The other OpenCode model entries were not changed.
 
 Not yet proven:
 

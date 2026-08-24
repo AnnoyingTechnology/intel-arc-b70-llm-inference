@@ -48,6 +48,14 @@ Without `chat_template_kwargs.enable_thinking=false`, the Qwen reasoning parser 
 
 OpenCode selector: `local-b70/qwen38`. The provider points directly to the loopback API and is not the global default. Its default reasoning effort is `low`; selectable variants are `off`, `low`, `medium` and `xhigh`, matching the other Qwen3.8 entry. OpenCode sends `off` literally while vLLM expects `none`, so the pinned startup patch normalizes that alias before chat-template rendering.
 
+The model options explicitly send `temperature=1`, `top_p=0.95` and
+`top_k=20` using snake-case keys. A localhost capture verified all three fields
+in the emitted API request. Do not change them to camelCase: this OpenAI-compatible
+provider forwarded camelCase as unknown fields while continuing to send
+`top_p=1`. `top_k=20` alone changed the recovered incident payload from 3/3
+cold failures to 3/3 cold passes, but it does not cure the separate cold NaN
+documented in [`repetition-incident.md`](repetition-incident.md).
+
 Automatic tool selection is enabled server-side with vLLM's `qwen3_coder` parser. The parser matches this model's XML `<tool_call><function=...>` chat-template contract.
 
 Automatic prefix caching is enabled with SHA-256 keys and a 64-token prefix-match unit. Repeated conversations and tool-call follow-ups can reuse cached context inside the XPU hybrid cache's larger physical blocks; cold, unrelated prompts still pay normal prefill cost. Cache entries are in-memory and disappear when the service restarts.

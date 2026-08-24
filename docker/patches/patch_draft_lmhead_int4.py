@@ -7,9 +7,9 @@ El LM head fp16 compartido (5120x248320 = 2.54 GB) se lee 5x/paso MTP4
 (0.66 GB/paso incl. scales) reduce las 4 pasadas del draft a ~4x0.66 GB
 → -7.6 GB/step ≈ -13 ms/step → objetivo ~108 tok/s.
 
-Lossless: el draft MTP usa SU PROPIO lm_head (DraftModelProposer._maybe_share
+Speculatively safe: el draft MTP usa SU PROPIO lm_head (DraftModelProposer._maybe_share
 _lm_head es no-op — no comparte el del target). Cuantizar la copia del draft
-no toca el target de verificacion (fp16) y los tokens del draft se verifican
+no toca el target de verificacion y los tokens del draft se verifican
 contra el target: la secuencia emitida es identica a MTP4 baseline (greedy).
 
 Formato del peso INT4 = exactamente el que consume la op YA existente
@@ -67,7 +67,9 @@ def quantize_lmhead_to_int4(weight: torch.Tensor, group_size: int = 128):
         wc = weight[i : i + chunk].float()  # [c, K] fp32 (chunked: no 5 GB temp)
         wg = wc.view(wc.shape[0], num_groups, group_size)
         maxabs = wg.abs().amax(dim=-1)  # [c, g]
-        scale = maxabs / 7.0
+        # An exactly-zero group otherwise computes 0/0 below. Keep its
+        # quantized weights at zero with a neutral, representable scale.
+        scale = torch.where(maxabs > 0, maxabs / 7.0, torch.ones_like(maxabs))
         q = (wg / scale.unsqueeze(-1)).round().clamp(-8, 7).to(torch.int32)
         stored = q + 8  # 0..15
         qv = stored.view(wc.shape[0], num_groups, group_size // 8, 8)
