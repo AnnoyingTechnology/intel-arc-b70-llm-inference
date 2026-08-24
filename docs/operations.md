@@ -52,6 +52,10 @@ Automatic tool selection is enabled server-side with vLLM's `qwen3_coder` parser
 
 Automatic prefix caching is enabled with SHA-256 keys and a 64-token prefix-match unit. Repeated conversations and tool-call follow-ups can reuse cached context inside the XPU hybrid cache's larger physical blocks; cold, unrelated prompts still pay normal prefill cost. Cache entries are in-memory and disappear when the service restarts.
 
+**Known issue:** a captured 49,925-token OpenCode turn reproducibly entered token-0 (`!`) collapse and left a bad reusable recurrent prefix state. A later prompt that was coherent after cold prefill emitted only `!` when it reused 48,256 tokens from that failed namespace. See [`repetition-incident.md`](repetition-incident.md) before relying on the 64-token prefix-match configuration for long agent sessions.
+
+For immediate containment, retry the session with Qwen's sampler and a new, private `cache_salt`: `temperature=1`, `top_p=0.95`, `top_k=20`. This retains MTP4 and isolates the request from the damaged cache namespace. Do not persist or publish the salt, and do not mistake this recovery procedure for the pending server-side fix.
+
 ## Power cap
 
 The selected 210 W cap is independent of the container and persists at boot:

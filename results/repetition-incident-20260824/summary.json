@@ -1,0 +1,84 @@
+{
+  "date": "2026-08-24",
+  "privacy": "No prompt, response text, tool arguments, paths from the captured session, or raw request are retained.",
+  "runtime": {
+    "vllm": "0.27.2rc1.dev77+gac7509e2b",
+    "served_model": "qwen38",
+    "mtp_speculative_tokens": 4,
+    "prefix_match_unit": 64,
+    "kv_cache_dtype": "fp8"
+  },
+  "captured_request": {
+    "messages": 24,
+    "tools": 12,
+    "message_string_chars": 143158,
+    "message_bangs": 16,
+    "message_max_bang_run": 1,
+    "prompt_tokens": 49969,
+    "first_failure_messages": 20,
+    "first_failure_prompt_tokens": 49925
+  },
+  "results": {
+    "existing_cache_current_sampler": {
+      "runs": 3,
+      "failed": 3,
+      "output_tokens_per_run": 96,
+      "bang_tokens_per_run": 96
+    },
+    "existing_cache_qwen_sampler": {
+      "runs": 3,
+      "failed": 3,
+      "output_tokens_per_run": 96,
+      "bang_tokens_per_run": 96
+    },
+    "repetition_penalty_sweep": {
+      "values": [1.01, 1.02, 1.05, 1.1, 1.2],
+      "failed": 5,
+      "output_tokens_per_run": 96,
+      "bang_tokens_per_run": 96
+    },
+    "full_payload_cold_qwen_sampler": {
+      "runs": 3,
+      "failed": 0,
+      "output_tokens_per_run": 32,
+      "repeated_bangs": 0
+    },
+    "full_payload_warm_clean_namespace": {
+      "runs": 3,
+      "failed": 0,
+      "output_tokens_per_run": 96,
+      "repeated_bangs": 0,
+      "byte_identical": true
+    },
+    "failure_boundary_cold_qwen_sampler": {
+      "prompt_tokens": 49925,
+      "created_cache_tokens": 49920,
+      "output_tokens": 32,
+      "bang_tokens": 32
+    },
+    "recovery_followup_cold_qwen_sampler": {
+      "prompt_tokens": 49940,
+      "cached_tokens": 0,
+      "created_cache_tokens": 49920,
+      "elapsed_seconds": 44.497,
+      "output_tokens": 32,
+      "repeated_bangs": 0
+    },
+    "recovery_followup_after_failed_prefix": {
+      "prompt_tokens": 49940,
+      "cached_tokens": 48256,
+      "created_cache_tokens": 1664,
+      "elapsed_seconds": 3.792,
+      "output_tokens": 32,
+      "bang_tokens": 32
+    },
+    "next_followup_after_clean_prefix": {
+      "prompt_tokens": 49955,
+      "cached_tokens": 48256,
+      "created_cache_tokens": 1664,
+      "elapsed_seconds": 3.272,
+      "output_tokens": 32,
+      "repeated_bangs": 0
+    }
+  }
+}

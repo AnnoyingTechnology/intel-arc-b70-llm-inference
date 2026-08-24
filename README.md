@@ -4,6 +4,8 @@ This Intel Arc Pro B70 was quite painful to get rolling properly, so here is wha
 
 This repository documents the reproducible Qwen3.8-27B service for one 32 GiB B70: a transparent INT4 target, MTP4 speculative decoding, FP8 KV cache, automatic prefix caching, and a persisted 210 W efficiency cap.
 
+> **Active investigation (2026-08-24):** a real 49.9K-token OpenCode session reproducibly exposed token-0 (`!`) collapse and a damaged reusable hybrid prefix state. MTP4 is retained; repetition penalty is falsified. A clean cache namespace plus Qwen's official sampler recovers the complete session, while the permanent prefix-cache fix is being isolated. See [the sanitized incident report](docs/repetition-incident.md).
+
 ## Result
 
 The active service exposes `qwen38` through an OpenAI-compatible API at `http://127.0.0.1:19622/v1` and through OpenCode as `local-b70/qwen38`.
@@ -75,5 +77,6 @@ The planned Huihui abliterated candidate must match the base model's quality and
 - [Operations](docs/operations.md): lifecycle, requests, validation and rollback.
 - [Benchmarks and quality](docs/benchmarks-and-quality.md): complete evidence and caveats.
 - [Research and pitfalls](docs/research-and-pitfalls.md): rejected paths and lessons.
+- [Token-0 repetition incident](docs/repetition-incident.md): exact sanitized reproducer, evidence, recovery and pending A/B.
 - [Huihui plan](docs/huihui-plan.md): abliterated-model A/B and promotion gate.
 - [References](docs/references.md): upstream sources and revisions.
