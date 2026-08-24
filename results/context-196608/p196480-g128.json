@@ -1,0 +1,67 @@
+{
+  "request_start_ns": 10044177875309,
+  "first_generated_ns": 10345394942858,
+  "first_visible_ns": null,
+  "request_end_ns": 10347424975520,
+  "ttft_s": 301.217067549,
+  "ttfc_s": null,
+  "total_s": 303.247100211,
+  "post_first_generation_s": 2.030032662,
+  "post_first_tpot_s": 0.0159845091496063,
+  "prompt_tokens": 196480,
+  "completion_tokens": 128,
+  "client_post_first_tps": 62.56056977668471,
+  "finish_reason": "length",
+  "reasoning_text": "We need answer user's request. User: \"RUNZ3t0iicF1RhgDNsg4mEYyNUZFvV6udbfjD5strLk5TWdeS7dHwqV6dLxN6IKfEFTf8nL6Htro3d9iUdQ1yykbJGAEFPbUwyu You are Pi, a practical private assistant. Analyze the supplied conversation and answer accurately. The session contains architecture notes, benchmark observations, configuration changes, user questions, tool outputs, error reports, and follow-up",
+  "content_text": "",
+  "generated_stream_events": 27,
+  "counter_names": {
+    "prefix_cache_hits": "vllm:prefix_cache_hits_total",
+    "prefix_cache_queries": "vllm:prefix_cache_queries_total",
+    "mtp_draft_tokens": "vllm:spec_decode_num_draft_tokens_total",
+    "mtp_accepted_tokens": "vllm:spec_decode_num_accepted_tokens_total",
+    "mtp_drafts": "vllm:spec_decode_num_drafts_total"
+  },
+  "counter_before": {
+    "prefix_cache_hits": 0.0,
+    "prefix_cache_queries": 0.0,
+    "mtp_draft_tokens": 100.0,
+    "mtp_accepted_tokens": 99.0,
+    "mtp_drafts": 25.0
+  },
+  "counter_after": {
+    "prefix_cache_hits": 0.0,
+    "prefix_cache_queries": 0.0,
+    "mtp_draft_tokens": 203.0,
+    "mtp_accepted_tokens": 200.0,
+    "mtp_drafts": 51.0
+  },
+  "counter_delta": {
+    "prefix_cache_hits": 0.0,
+    "prefix_cache_queries": 0.0,
+    "mtp_draft_tokens": 103.0,
+    "mtp_accepted_tokens": 101.0,
+    "mtp_drafts": 26.0
+  },
+  "prefix_cache_hits_delta": 0.0,
+  "prefix_cache_queries_delta": 0.0,
+  "mtp_proposed_tokens": 103.0,
+  "mtp_accepted_tokens": 101.0,
+  "mtp_acceptance_rate": 0.9805825242718447,
+  "mtp_accepted_per_position_delta": {
+    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen38-context-test\",position=\"0\"}": 26.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen38-context-test\",position=\"1\"}": 26.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen38-context-test\",position=\"2\"}": 25.0,
+    "vllm:spec_decode_num_accepted_tokens_per_pos_total{engine=\"0\",model_name=\"qwen38-context-test\",position=\"3\"}": 24.0
+  },
+  "cache_expected": "cold",
+  "expected_prompt_tokens": 196480,
+  "messages_sha256": "bfa744219a029e52e3f3bd2789c0b5c18f6df6e4ebc47d1115b1ecf6e12ee1c7",
+  "raw_sse": "/home/julien/Documents/B70/results/context-196608/p196480-g128.sse.jsonl",
+  "input_tokens_per_ttft_s": 652.2870752270303,
+  "target_prompt_tokens": 196480,
+  "requested_output_tokens": 128,
+  "max_model_len": 196608,
+  "family": "assistant",
+  "content_sha256": "1dfedb2636adb5e181e57cf0d29cdb94e2eba1ed8af5cc65de5491fd1ab97982"
+}

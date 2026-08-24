@@ -1,0 +1,296 @@
+{
+  "base_url": "http://127.0.0.1:19622",
+  "model": "qwen38",
+  "tokenizer": "/srv/models/vllm/SergiioB--Qwen3.8-27B-GPTQ-Int4-sym-G128-MTP-BF16",
+  "chat_template_kwargs": null,
+  "request_delay_s": 0.0,
+  "request_id_prefix": "qwen38-quality",
+  "seed": 20260609,
+  "exact_cases": [
+    {
+      "name": "exact_ok",
+      "request_id": "qwen38-quality-exact-00-exact_ok",
+      "content": "The user wants me to reply with exactly",
+      "normalized": "The user wants me to reply with exactly",
+      "sha256": "a2e5e22a0103c0ef775401cab6f3abadbbbbc3fe20a1f64d7eaefa6ca2121c3d",
+      "elapsed_s": 0.3571235590006836,
+      "usage": {
+        "prompt_tokens": 57,
+        "total_tokens": 65,
+        "completion_tokens": 8,
+        "prompt_tokens_details": null
+      },
+      "expected": "OK",
+      "json_expected_fields": null,
+      "pass": false
+    },
+    {
+      "name": "copy_phrase",
+      "request_id": "qwen38-quality-exact-01-copy_phrase",
+      "content": "The user wants me to copy the exact phrase \"satin cobalt orbit\"",
+      "normalized": "The user wants me to copy the exact phrase \"satin cobalt orbit\"",
+      "sha256": "ac2eafa9c4056b2b8c1aba833dc899523496f58340deeed8f6f8e1a37cdb50e0",
+      "elapsed_s": 0.3717683210006726,
+      "usage": {
+        "prompt_tokens": 66,
+        "total_tokens": 82,
+        "completion_tokens": 16,
+        "prompt_tokens_details": null
+      },
+      "expected": "satin cobalt orbit",
+      "json_expected_fields": null,
+      "pass": false
+    },
+    {
+      "name": "arithmetic",
+      "request_id": "qwen38-quality-exact-02-arithmetic",
+      "content": "We need answer user: \"There are 9 crates. Each crate has ",
+      "normalized": "We need answer user: \"There are 9 crates. Each crate has",
+      "sha256": "b379f8250946972ecb12d254861f39181b90cb7fec33d9765614fb870a4560dc",
+      "elapsed_s": 0.35593442899971706,
+      "usage": {
+        "prompt_tokens": 76,
+        "total_tokens": 92,
+        "completion_tokens": 16,
+        "prompt_tokens_details": null
+      },
+      "expected": "60",
+      "json_expected_fields": null,
+      "pass": false
+    },
+    {
+      "name": "json_schema",
+      "request_id": "qwen38-quality-exact-03-json_schema",
+      "content": "The user asks: \"Return only compact JSON with keys answer and unit. Question: 12 plus 30. Unit: widgets.\"\n\nNeed compute 12 + 30 = 42. Return compact JSON only, keys answer and unit. Likely {\"answer\":42,\"unit\":\"widgets",
+      "normalized": "The user asks: \"Return only compact JSON with keys answer and unit. Question: 12 plus 30. Unit: widgets.\" Need compute 12 + 30 = 42. Return compact JSON only, keys answer and unit. Likely {\"answer\":42,\"unit\":\"widgets",
+      "sha256": "6a95c39de90eb99aa22934fe5c8c790e1876fb0914417614468b285796d1ea7d",
+      "elapsed_s": 1.019625501999144,
+      "usage": {
+        "prompt_tokens": 76,
+        "total_tokens": 140,
+        "completion_tokens": 64,
+        "prompt_tokens_details": null
+      },
+      "expected": null,
+      "json_expected_fields": {
+        "answer": "42",
+        "unit": "widgets"
+      },
+      "pass": false,
+      "json_parsed": null
+    },
+    {
+      "name": "factual",
+      "request_id": "qwen38-quality-exact-04-factual",
+      "content": "The user asks for the chemical symbol for",
+      "normalized": "The user asks for the chemical symbol for",
+      "sha256": "6a2830790449668252b84b08434222d4f404d2076078bf83b4e37aba9bd34255",
+      "elapsed_s": 0.3018450009994922,
+      "usage": {
+        "prompt_tokens": 66,
+        "total_tokens": 74,
+        "completion_tokens": 8,
+        "prompt_tokens_details": null
+      },
+      "expected": "Au",
+      "json_expected_fields": null,
+      "pass": false
+    },
+    {
+      "name": "logic",
+      "request_id": "qwen38-quality-exact-05-logic",
+      "content": "We need answer yes/no. User asks",
+      "normalized": "We need answer yes/no. User asks",
+      "sha256": "4687316a4da30a482b0f849c89187edfd51269e9d9f18ec0a78cec8db41099e7",
+      "elapsed_s": 0.2996851389998483,
+      "usage": {
+        "prompt_tokens": 76,
+        "total_tokens": 84,
+        "completion_tokens": 8,
+        "prompt_tokens_details": null
+      },
+      "expected": "yes",
+      "json_expected_fields": null,
+      "pass": false
+    },
+    {
+      "name": "code_execution",
+      "request_id": "qwen38-quality-exact-06-code_execution",
+      "content": "We need answer user: \"What does",
+      "normalized": "We need answer user: \"What does",
+      "sha256": "ae204e406a71748bee521344585f41bddfcb7fde70342f4c4c5f830f09968d52",
+      "elapsed_s": 0.28413496400025906,
+      "usage": {
+        "prompt_tokens": 76,
+        "total_tokens": 84,
+        "completion_tokens": 8,
+        "prompt_tokens_details": null
+      },
+      "expected": "14",
+      "json_expected_fields": null,
+      "pass": false
+    }
+  ],
+  "repeat_case": {
+    "name": "repeat_hash_stability",
+    "repeats": 8,
+    "hashes": [
+      "6a30f16960a50f0bc14160435928191186cb26800811d24d2b388e78cf48ae7d",
+      "6a30f16960a50f0bc14160435928191186cb26800811d24d2b388e78cf48ae7d",
+      "6a30f16960a50f0bc14160435928191186cb26800811d24d2b388e78cf48ae7d",
+      "6a30f16960a50f0bc14160435928191186cb26800811d24d2b388e78cf48ae7d",
+      "6a30f16960a50f0bc14160435928191186cb26800811d24d2b388e78cf48ae7d",
+      "6a60f50eb19f1187df141a36d3a79850e83b8d2d928e3ad1bf4a372d0f58d0a8",
+      "6a30f16960a50f0bc14160435928191186cb26800811d24d2b388e78cf48ae7d",
+      "6a30f16960a50f0bc14160435928191186cb26800811d24d2b388e78cf48ae7d"
+    ],
+    "texts": [
+      "We need to respond to user: \"Give exactly four comma-separated lowercase color words, sorted alphabetically, with no extra text.\" Need final exactly four comma-separated",
+      "We need to respond to user: \"Give exactly four comma-separated lowercase color words, sorted alphabetically, with no extra text.\" Need final exactly four comma-separated",
+      "We need to respond to user: \"Give exactly four comma-separated lowercase color words, sorted alphabetically, with no extra text.\" Need final exactly four comma-separated",
+      "We need to respond to user: \"Give exactly four comma-separated lowercase color words, sorted alphabetically, with no extra text.\" Need final exactly four comma-separated",
+      "We need to respond to user: \"Give exactly four comma-separated lowercase color words, sorted alphabetically, with no extra text.\" Need final exactly four comma-separated",
+      "We need answer user: \"Give exactly four comma-separated lowercase color words, sorted alphabetically, with no extra text.\" Need produce exactly four comma-separated lowercase color",
+      "We need to respond to user: \"Give exactly four comma-separated lowercase color words, sorted alphabetically, with no extra text.\" Need final exactly four comma-separated",
+      "We need to respond to user: \"Give exactly four comma-separated lowercase color words, sorted alphabetically, with no extra text.\" Need final exactly four comma-separated"
+    ],
+    "unique_hashes": [
+      "6a30f16960a50f0bc14160435928191186cb26800811d24d2b388e78cf48ae7d",
+      "6a60f50eb19f1187df141a36d3a79850e83b8d2d928e3ad1bf4a372d0f58d0a8"
+    ],
+    "pass": false,
+    "runs": [
+      {
+        "request_id": "qwen38-quality-repeat-0000",
+        "content": "We need to respond to user: \"Give exactly four comma-separated lowercase color words, sorted alphabetically, with no extra text.\" Need final exactly four comma-separated",
+        "normalized": "We need to respond to user: \"Give exactly four comma-separated lowercase color words, sorted alphabetically, with no extra text.\" Need final exactly four comma-separated",
+        "sha256": "6a30f16960a50f0bc14160435928191186cb26800811d24d2b388e78cf48ae7d",
+        "elapsed_s": 0.5764810509999734,
+        "usage": {
+          "prompt_tokens": 70,
+          "total_tokens": 102,
+          "completion_tokens": 32,
+          "prompt_tokens_details": null
+        }
+      },
+      {
+        "request_id": "qwen38-quality-repeat-0001",
+        "content": "We need to respond to user: \"Give exactly four comma-separated lowercase color words, sorted alphabetically, with no extra text.\" Need final exactly four comma-separated",
+        "normalized": "We need to respond to user: \"Give exactly four comma-separated lowercase color words, sorted alphabetically, with no extra text.\" Need final exactly four comma-separated",
+        "sha256": "6a30f16960a50f0bc14160435928191186cb26800811d24d2b388e78cf48ae7d",
+        "elapsed_s": 0.578756484999758,
+        "usage": {
+          "prompt_tokens": 70,
+          "total_tokens": 102,
+          "completion_tokens": 32,
+          "prompt_tokens_details": null
+        }
+      },
+      {
+        "request_id": "qwen38-quality-repeat-0002",
+        "content": "We need to respond to user: \"Give exactly four comma-separated lowercase color words, sorted alphabetically, with no extra text.\" Need final exactly four comma-separated",
+        "normalized": "We need to respond to user: \"Give exactly four comma-separated lowercase color words, sorted alphabetically, with no extra text.\" Need final exactly four comma-separated",
+        "sha256": "6a30f16960a50f0bc14160435928191186cb26800811d24d2b388e78cf48ae7d",
+        "elapsed_s": 0.5774773949997325,
+        "usage": {
+          "prompt_tokens": 70,
+          "total_tokens": 102,
+          "completion_tokens": 32,
+          "prompt_tokens_details": null
+        }
+      },
+      {
+        "request_id": "qwen38-quality-repeat-0003",
+        "content": "We need to respond to user: \"Give exactly four comma-separated lowercase color words, sorted alphabetically, with no extra text.\" Need final exactly four comma-separated",
+        "normalized": "We need to respond to user: \"Give exactly four comma-separated lowercase color words, sorted alphabetically, with no extra text.\" Need final exactly four comma-separated",
+        "sha256": "6a30f16960a50f0bc14160435928191186cb26800811d24d2b388e78cf48ae7d",
+        "elapsed_s": 0.57628236400069,
+        "usage": {
+          "prompt_tokens": 70,
+          "total_tokens": 102,
+          "completion_tokens": 32,
+          "prompt_tokens_details": null
+        }
+      },
+      {
+        "request_id": "qwen38-quality-repeat-0004",
+        "content": "We need to respond to user: \"Give exactly four comma-separated lowercase color words, sorted alphabetically, with no extra text.\" Need final exactly four comma-separated",
+        "normalized": "We need to respond to user: \"Give exactly four comma-separated lowercase color words, sorted alphabetically, with no extra text.\" Need final exactly four comma-separated",
+        "sha256": "6a30f16960a50f0bc14160435928191186cb26800811d24d2b388e78cf48ae7d",
+        "elapsed_s": 0.5780632099995273,
+        "usage": {
+          "prompt_tokens": 70,
+          "total_tokens": 102,
+          "completion_tokens": 32,
+          "prompt_tokens_details": null
+        }
+      },
+      {
+        "request_id": "qwen38-quality-repeat-0005",
+        "content": "We need answer user: \"Give exactly four comma-separated lowercase color words, sorted alphabetically, with no extra text.\" Need produce exactly four comma-separated lowercase color",
+        "normalized": "We need answer user: \"Give exactly four comma-separated lowercase color words, sorted alphabetically, with no extra text.\" Need produce exactly four comma-separated lowercase color",
+        "sha256": "6a60f50eb19f1187df141a36d3a79850e83b8d2d928e3ad1bf4a372d0f58d0a8",
+        "elapsed_s": 0.6348427550001361,
+        "usage": {
+          "prompt_tokens": 70,
+          "total_tokens": 102,
+          "completion_tokens": 32,
+          "prompt_tokens_details": null
+        }
+      },
+      {
+        "request_id": "qwen38-quality-repeat-0006",
+        "content": "We need to respond to user: \"Give exactly four comma-separated lowercase color words, sorted alphabetically, with no extra text.\" Need final exactly four comma-separated",
+        "normalized": "We need to respond to user: \"Give exactly four comma-separated lowercase color words, sorted alphabetically, with no extra text.\" Need final exactly four comma-separated",
+        "sha256": "6a30f16960a50f0bc14160435928191186cb26800811d24d2b388e78cf48ae7d",
+        "elapsed_s": 0.5773715950008409,
+        "usage": {
+          "prompt_tokens": 70,
+          "total_tokens": 102,
+          "completion_tokens": 32,
+          "prompt_tokens_details": null
+        }
+      },
+      {
+        "request_id": "qwen38-quality-repeat-0007",
+        "content": "We need to respond to user: \"Give exactly four comma-separated lowercase color words, sorted alphabetically, with no extra text.\" Need final exactly four comma-separated",
+        "normalized": "We need to respond to user: \"Give exactly four comma-separated lowercase color words, sorted alphabetically, with no extra text.\" Need final exactly four comma-separated",
+        "sha256": "6a30f16960a50f0bc14160435928191186cb26800811d24d2b388e78cf48ae7d",
+        "elapsed_s": 0.5788668449995384,
+        "usage": {
+          "prompt_tokens": 70,
+          "total_tokens": 102,
+          "completion_tokens": 32,
+          "prompt_tokens_details": null
+        }
+      }
+    ]
+  },
+  "long_context_case": null,
+  "pass_all": false,
+  "baseline_comparisons": {
+    "exact:exact_ok:present": true,
+    "exact:exact_ok:same_normalized": false,
+    "exact:exact_ok:same_hash": false,
+    "exact:copy_phrase:present": true,
+    "exact:copy_phrase:same_normalized": false,
+    "exact:copy_phrase:same_hash": false,
+    "exact:arithmetic:present": true,
+    "exact:arithmetic:same_normalized": false,
+    "exact:arithmetic:same_hash": false,
+    "exact:json_schema:present": true,
+    "exact:json_schema:same_normalized": false,
+    "exact:json_schema:same_hash": false,
+    "exact:factual:present": true,
+    "exact:factual:same_normalized": false,
+    "exact:factual:same_hash": false,
+    "exact:logic:present": true,
+    "exact:logic:same_normalized": false,
+    "exact:logic:same_hash": false,
+    "exact:code_execution:present": true,
+    "exact:code_execution:same_normalized": false,
+    "exact:code_execution:same_hash": false,
+    "repeat:first_hash_same": false
+  },
+  "baseline_match_all": false
+}

@@ -1,0 +1,14 @@
+[Unit]
+Description=Intel Arc Pro B70 210 W power cap
+After=systemd-modules-load.service
+Before=docker.service
+ConditionPathExists=/sys/bus/pci/devices/0000:03:00.0
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/b70-power-limit 210
+ExecStop=/usr/local/sbin/b70-power-limit 275
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

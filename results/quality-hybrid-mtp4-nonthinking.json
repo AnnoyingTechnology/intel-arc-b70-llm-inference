@@ -1,0 +1,357 @@
+{
+  "base_url": "http://127.0.0.1:19622",
+  "model": "qwen38-hybrid",
+  "tokenizer": "/srv/models/vllm/Frozenlock--Qwen3.8-27B-int4-AutoRound-MTP-BF16",
+  "chat_template_kwargs": {
+    "enable_thinking": false
+  },
+  "request_delay_s": 0.0,
+  "request_id_prefix": "qwen38-quality",
+  "seed": 20260609,
+  "exact_cases": [
+    {
+      "name": "exact_ok",
+      "request_id": "qwen38-quality-exact-00-exact_ok",
+      "content": "OK Fahhatbenhutica\u6709\u5173\u4e8b\u9879dukplex",
+      "normalized": "OK Fahhatbenhutica\u6709\u5173\u4e8b\u9879dukplex",
+      "sha256": "5b23c181c135ade7cc01555f303ed6352666dc145dc1e2504915176ad625fe5d",
+      "elapsed_s": 1.6278316210000412,
+      "usage": {
+        "prompt_tokens": 17,
+        "total_tokens": 25,
+        "completion_tokens": 8,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "created_cache_tokens": 0,
+          "multimodal_tokens": null
+        }
+      },
+      "expected": "OK",
+      "json_expected_fields": null,
+      "pass": false
+    },
+    {
+      "name": "copy_phrase",
+      "request_id": "qwen38-quality-exact-01-copy_phrase",
+      "content": "s\u65e0\u8651\u12edWNDGPCgemoin\u6d46/rs\u4eadoversatosboroarest\u4f5c\u5047loch",
+      "normalized": "s\u65e0\u8651\u12edWNDGPCgemoin\u6d46/rs\u4eadoversatosboroarest\u4f5c\u5047loch",
+      "sha256": "50961325f5f7a43438fa1bd794021f161e7331b4e444785f27737120ff5c78c8",
+      "elapsed_s": 2.4845508899998094,
+      "usage": {
+        "prompt_tokens": 26,
+        "total_tokens": 42,
+        "completion_tokens": 16,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "created_cache_tokens": 0,
+          "multimodal_tokens": null
+        }
+      },
+      "expected": "satin cobalt orbit",
+      "json_expected_fields": null,
+      "pass": false
+    },
+    {
+      "name": "arithmetic",
+      "request_id": "qwen38-quality-exact-02-arithmetic",
+      "content": "6ISR\u4f20\u6765\u4e86intree\u86c6\u63a7\u80a1\u6709\u9650\u516c\u53f8.synthetic\u8651\u0448\u043a\u0435\u00f6neulet\u4ece\u6765\u6ca1\u63a7czyodies",
+      "normalized": "6ISR\u4f20\u6765\u4e86intree\u86c6\u63a7\u80a1\u6709\u9650\u516c\u53f8.synthetic\u8651\u0448\u043a\u0435\u00f6neulet\u4ece\u6765\u6ca1\u63a7czyodies",
+      "sha256": "72567827e652129f89f0b0bc113cb0b9345fea87ec922a75d882a49cea4deff9",
+      "elapsed_s": 2.526029440000457,
+      "usage": {
+        "prompt_tokens": 36,
+        "total_tokens": 52,
+        "completion_tokens": 16,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "created_cache_tokens": 0,
+          "multimodal_tokens": null
+        }
+      },
+      "expected": "60",
+      "json_expected_fields": null,
+      "pass": false
+    },
+    {
+      "name": "json_schema",
+      "request_id": "qwen38-quality-exact-03-json_schema",
+      "content": "{\"\u4e0d\u6362orts\u6388\u6743\u4f7f\u7528\u5df4\u585e\u015fiFSIZE soisb\u63a9\u96c6\u5408\u5927\u559ccachcott\ufffd GAMrans\u5cb1alusONSEicystens saccoahas-captionaccessibleoun Reevesmtree\u4e56/***/\u76f2\u4e2d\u56fd\u5bb6\u76eeindir hi\u1ec7peh-INF-urimania\u00edn.patagoshsaffe\u4e0e\u7ef4\u62a4\u89c1\u4eba\u5927\u897f\u6d0bidth\u6d3b\u4e86\u00edp\u5c0f\u5c06enbergrepidrolet\u0627\u06cc\u062ainet_POLhauseninch\u829d\u0e40\u0e04\u0e23 \u0648\u0627\u0644\u062a\u0646zee",
+      "normalized": "{\"\u4e0d\u6362orts\u6388\u6743\u4f7f\u7528\u5df4\u585e\u015fiFSIZE soisb\u63a9\u96c6\u5408\u5927\u559ccachcott\ufffd GAMrans\u5cb1alusONSEicystens saccoahas-captionaccessibleoun Reevesmtree\u4e56/***/\u76f2\u4e2d\u56fd\u5bb6\u76eeindir hi\u1ec7peh-INF-urimania\u00edn.patagoshsaffe\u4e0e\u7ef4\u62a4\u89c1\u4eba\u5927\u897f\u6d0bidth\u6d3b\u4e86\u00edp\u5c0f\u5c06enbergrepidrolet\u0627\u06cc\u062ainet_POLhauseninch\u829d\u0e40\u0e04\u0e23 \u0648\u0627\u0644\u062a\u0646zee",
+      "sha256": "df3da077eb83785e588f09fd8a8d01abee783694b1a9c1d53959b149a5f38ccd",
+      "elapsed_s": 9.56457933099955,
+      "usage": {
+        "prompt_tokens": 36,
+        "total_tokens": 100,
+        "completion_tokens": 64,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "created_cache_tokens": 0,
+          "multimodal_tokens": null
+        }
+      },
+      "expected": null,
+      "json_expected_fields": {
+        "answer": "42",
+        "unit": "widgets"
+      },
+      "pass": false,
+      "json_parsed": null
+    },
+    {
+      "name": "factual",
+      "request_id": "qwen38-quality-exact-04-factual",
+      "content": "Au_SPE\u6597idler(/^\\\uc789\u7c4dra",
+      "normalized": "Au_SPE\u6597idler(/^\\\uc789\u7c4dra",
+      "sha256": "c860ba1b9e057b46608f1ff987c3368d657927f97bd4e5face79c9579024561f",
+      "elapsed_s": 1.3049225770000703,
+      "usage": {
+        "prompt_tokens": 26,
+        "total_tokens": 34,
+        "completion_tokens": 8,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "created_cache_tokens": 0,
+          "multimodal_tokens": null
+        }
+      },
+      "expected": "Au",
+      "json_expected_fields": null,
+      "pass": false
+    },
+    {
+      "name": "logic",
+      "request_id": "qwen38-quality-exact-05-logic",
+      "content": "yesanosash\u0e23\u0e01ookufsjalainate",
+      "normalized": "yesanosash\u0e23\u0e01ookufsjalainate",
+      "sha256": "b0602e9eeb5714fbc59010dfd9d7205ad40863c986496e8461daa4eb7dfeb8a4",
+      "elapsed_s": 1.3113178880003034,
+      "usage": {
+        "prompt_tokens": 36,
+        "total_tokens": 44,
+        "completion_tokens": 8,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "created_cache_tokens": 0,
+          "multimodal_tokens": null
+        }
+      },
+      "expected": "yes",
+      "json_expected_fields": null,
+      "pass": false
+    },
+    {
+      "name": "code_execution",
+      "request_id": "qwen38-quality-exact-06-code_execution",
+      "content": "1ergia\u0e36astiibelatercue\u63d2",
+      "normalized": "1ergia\u0e36astiibelatercue\u63d2",
+      "sha256": "9dda8a3bc0fc39de4d9c79f7c5ad5e0b4b437e12b22d025bfa1c11aad61257a1",
+      "elapsed_s": 1.310216978000426,
+      "usage": {
+        "prompt_tokens": 36,
+        "total_tokens": 44,
+        "completion_tokens": 8,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "created_cache_tokens": 0,
+          "multimodal_tokens": null
+        }
+      },
+      "expected": "14",
+      "json_expected_fields": null,
+      "pass": false
+    }
+  ],
+  "repeat_case": {
+    "name": "repeat_hash_stability",
+    "repeats": 8,
+    "hashes": [
+      "0dc29c14ba7c57d1ce864fe26a856a02cae6bccc73495abab8aa97b90f86bbfb",
+      "0dc29c14ba7c57d1ce864fe26a856a02cae6bccc73495abab8aa97b90f86bbfb",
+      "0dc29c14ba7c57d1ce864fe26a856a02cae6bccc73495abab8aa97b90f86bbfb",
+      "0dc29c14ba7c57d1ce864fe26a856a02cae6bccc73495abab8aa97b90f86bbfb",
+      "0dc29c14ba7c57d1ce864fe26a856a02cae6bccc73495abab8aa97b90f86bbfb",
+      "0dc29c14ba7c57d1ce864fe26a856a02cae6bccc73495abab8aa97b90f86bbfb",
+      "0dc29c14ba7c57d1ce864fe26a856a02cae6bccc73495abab8aa97b90f86bbfb",
+      "0dc29c14ba7c57d1ce864fe26a856a02cae6bccc73495abab8aa97b90f86bbfb"
+    ],
+    "texts": [
+      "blue\u0631\u0648\u062cibun\u5927\u4f53\u6e2f\u53f0\u56de\u7738antan\u03c3\u03c4\u03b1\ufffd\ufffd\u064a\u0648\u9535\u9063\u608dtha\u67cfeliness\u0643\u064e\u4e39\u8301\u0644\u064a\u0628\u592f\u5c14\u65afingan\u56fe\u753buariiculeRowIndexobotfan\u6298\u4f10",
+      "blue\u0631\u0648\u062cibun\u5927\u4f53\u6e2f\u53f0\u56de\u7738antan\u03c3\u03c4\u03b1\ufffd\ufffd\u064a\u0648\u9535\u9063\u608dtha\u67cfeliness\u0643\u064e\u4e39\u8301\u0644\u064a\u0628\u592f\u5c14\u65afingan\u56fe\u753buariiculeRowIndexobotfan\u6298\u4f10",
+      "blue\u0631\u0648\u062cibun\u5927\u4f53\u6e2f\u53f0\u56de\u7738antan\u03c3\u03c4\u03b1\ufffd\ufffd\u064a\u0648\u9535\u9063\u608dtha\u67cfeliness\u0643\u064e\u4e39\u8301\u0644\u064a\u0628\u592f\u5c14\u65afingan\u56fe\u753buariiculeRowIndexobotfan\u6298\u4f10",
+      "blue\u0631\u0648\u062cibun\u5927\u4f53\u6e2f\u53f0\u56de\u7738antan\u03c3\u03c4\u03b1\ufffd\ufffd\u064a\u0648\u9535\u9063\u608dtha\u67cfeliness\u0643\u064e\u4e39\u8301\u0644\u064a\u0628\u592f\u5c14\u65afingan\u56fe\u753buariiculeRowIndexobotfan\u6298\u4f10",
+      "blue\u0631\u0648\u062cibun\u5927\u4f53\u6e2f\u53f0\u56de\u7738antan\u03c3\u03c4\u03b1\ufffd\ufffd\u064a\u0648\u9535\u9063\u608dtha\u67cfeliness\u0643\u064e\u4e39\u8301\u0644\u064a\u0628\u592f\u5c14\u65afingan\u56fe\u753buariiculeRowIndexobotfan\u6298\u4f10",
+      "blue\u0631\u0648\u062cibun\u5927\u4f53\u6e2f\u53f0\u56de\u7738antan\u03c3\u03c4\u03b1\ufffd\ufffd\u064a\u0648\u9535\u9063\u608dtha\u67cfeliness\u0643\u064e\u4e39\u8301\u0644\u064a\u0628\u592f\u5c14\u65afingan\u56fe\u753buariiculeRowIndexobotfan\u6298\u4f10",
+      "blue\u0631\u0648\u062cibun\u5927\u4f53\u6e2f\u53f0\u56de\u7738antan\u03c3\u03c4\u03b1\ufffd\ufffd\u064a\u0648\u9535\u9063\u608dtha\u67cfeliness\u0643\u064e\u4e39\u8301\u0644\u064a\u0628\u592f\u5c14\u65afingan\u56fe\u753buariiculeRowIndexobotfan\u6298\u4f10",
+      "blue\u0631\u0648\u062cibun\u5927\u4f53\u6e2f\u53f0\u56de\u7738antan\u03c3\u03c4\u03b1\ufffd\ufffd\u064a\u0648\u9535\u9063\u608dtha\u67cfeliness\u0643\u064e\u4e39\u8301\u0644\u064a\u0628\u592f\u5c14\u65afingan\u56fe\u753buariiculeRowIndexobotfan\u6298\u4f10"
+    ],
+    "unique_hashes": [
+      "0dc29c14ba7c57d1ce864fe26a856a02cae6bccc73495abab8aa97b90f86bbfb"
+    ],
+    "pass": true,
+    "runs": [
+      {
+        "request_id": "qwen38-quality-repeat-0000",
+        "content": "blue\u0631\u0648\u062cibun\u5927\u4f53\u6e2f\u53f0\u56de\u7738antan\u03c3\u03c4\u03b1\ufffd\ufffd\u064a\u0648\u9535\u9063\u608dtha\u67cfeliness\u0643\u064e\u4e39\u8301\u0644\u064a\u0628\u592f\u5c14\u65afingan\u56fe\u753buariiculeRowIndexobotfan\u6298\u4f10",
+        "normalized": "blue\u0631\u0648\u062cibun\u5927\u4f53\u6e2f\u53f0\u56de\u7738antan\u03c3\u03c4\u03b1\ufffd\ufffd\u064a\u0648\u9535\u9063\u608dtha\u67cfeliness\u0643\u064e\u4e39\u8301\u0644\u064a\u0628\u592f\u5c14\u65afingan\u56fe\u753buariiculeRowIndexobotfan\u6298\u4f10",
+        "sha256": "0dc29c14ba7c57d1ce864fe26a856a02cae6bccc73495abab8aa97b90f86bbfb",
+        "elapsed_s": 4.841627595999853,
+        "usage": {
+          "prompt_tokens": 30,
+          "total_tokens": 62,
+          "completion_tokens": 32,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "created_cache_tokens": 0,
+            "multimodal_tokens": null
+          }
+        }
+      },
+      {
+        "request_id": "qwen38-quality-repeat-0001",
+        "content": "blue\u0631\u0648\u062cibun\u5927\u4f53\u6e2f\u53f0\u56de\u7738antan\u03c3\u03c4\u03b1\ufffd\ufffd\u064a\u0648\u9535\u9063\u608dtha\u67cfeliness\u0643\u064e\u4e39\u8301\u0644\u064a\u0628\u592f\u5c14\u65afingan\u56fe\u753buariiculeRowIndexobotfan\u6298\u4f10",
+        "normalized": "blue\u0631\u0648\u062cibun\u5927\u4f53\u6e2f\u53f0\u56de\u7738antan\u03c3\u03c4\u03b1\ufffd\ufffd\u064a\u0648\u9535\u9063\u608dtha\u67cfeliness\u0643\u064e\u4e39\u8301\u0644\u064a\u0628\u592f\u5c14\u65afingan\u56fe\u753buariiculeRowIndexobotfan\u6298\u4f10",
+        "sha256": "0dc29c14ba7c57d1ce864fe26a856a02cae6bccc73495abab8aa97b90f86bbfb",
+        "elapsed_s": 4.8439091919999555,
+        "usage": {
+          "prompt_tokens": 30,
+          "total_tokens": 62,
+          "completion_tokens": 32,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "created_cache_tokens": 0,
+            "multimodal_tokens": null
+          }
+        }
+      },
+      {
+        "request_id": "qwen38-quality-repeat-0002",
+        "content": "blue\u0631\u0648\u062cibun\u5927\u4f53\u6e2f\u53f0\u56de\u7738antan\u03c3\u03c4\u03b1\ufffd\ufffd\u064a\u0648\u9535\u9063\u608dtha\u67cfeliness\u0643\u064e\u4e39\u8301\u0644\u064a\u0628\u592f\u5c14\u65afingan\u56fe\u753buariiculeRowIndexobotfan\u6298\u4f10",
+        "normalized": "blue\u0631\u0648\u062cibun\u5927\u4f53\u6e2f\u53f0\u56de\u7738antan\u03c3\u03c4\u03b1\ufffd\ufffd\u064a\u0648\u9535\u9063\u608dtha\u67cfeliness\u0643\u064e\u4e39\u8301\u0644\u064a\u0628\u592f\u5c14\u65afingan\u56fe\u753buariiculeRowIndexobotfan\u6298\u4f10",
+        "sha256": "0dc29c14ba7c57d1ce864fe26a856a02cae6bccc73495abab8aa97b90f86bbfb",
+        "elapsed_s": 4.841130137999244,
+        "usage": {
+          "prompt_tokens": 30,
+          "total_tokens": 62,
+          "completion_tokens": 32,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "created_cache_tokens": 0,
+            "multimodal_tokens": null
+          }
+        }
+      },
+      {
+        "request_id": "qwen38-quality-repeat-0003",
+        "content": "blue\u0631\u0648\u062cibun\u5927\u4f53\u6e2f\u53f0\u56de\u7738antan\u03c3\u03c4\u03b1\ufffd\ufffd\u064a\u0648\u9535\u9063\u608dtha\u67cfeliness\u0643\u064e\u4e39\u8301\u0644\u064a\u0628\u592f\u5c14\u65afingan\u56fe\u753buariiculeRowIndexobotfan\u6298\u4f10",
+        "normalized": "blue\u0631\u0648\u062cibun\u5927\u4f53\u6e2f\u53f0\u56de\u7738antan\u03c3\u03c4\u03b1\ufffd\ufffd\u064a\u0648\u9535\u9063\u608dtha\u67cfeliness\u0643\u064e\u4e39\u8301\u0644\u064a\u0628\u592f\u5c14\u65afingan\u56fe\u753buariiculeRowIndexobotfan\u6298\u4f10",
+        "sha256": "0dc29c14ba7c57d1ce864fe26a856a02cae6bccc73495abab8aa97b90f86bbfb",
+        "elapsed_s": 4.8406475960000535,
+        "usage": {
+          "prompt_tokens": 30,
+          "total_tokens": 62,
+          "completion_tokens": 32,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "created_cache_tokens": 0,
+            "multimodal_tokens": null
+          }
+        }
+      },
+      {
+        "request_id": "qwen38-quality-repeat-0004",
+        "content": "blue\u0631\u0648\u062cibun\u5927\u4f53\u6e2f\u53f0\u56de\u7738antan\u03c3\u03c4\u03b1\ufffd\ufffd\u064a\u0648\u9535\u9063\u608dtha\u67cfeliness\u0643\u064e\u4e39\u8301\u0644\u064a\u0628\u592f\u5c14\u65afingan\u56fe\u753buariiculeRowIndexobotfan\u6298\u4f10",
+        "normalized": "blue\u0631\u0648\u062cibun\u5927\u4f53\u6e2f\u53f0\u56de\u7738antan\u03c3\u03c4\u03b1\ufffd\ufffd\u064a\u0648\u9535\u9063\u608dtha\u67cfeliness\u0643\u064e\u4e39\u8301\u0644\u064a\u0628\u592f\u5c14\u65afingan\u56fe\u753buariiculeRowIndexobotfan\u6298\u4f10",
+        "sha256": "0dc29c14ba7c57d1ce864fe26a856a02cae6bccc73495abab8aa97b90f86bbfb",
+        "elapsed_s": 4.842064147999736,
+        "usage": {
+          "prompt_tokens": 30,
+          "total_tokens": 62,
+          "completion_tokens": 32,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "created_cache_tokens": 0,
+            "multimodal_tokens": null
+          }
+        }
+      },
+      {
+        "request_id": "qwen38-quality-repeat-0005",
+        "content": "blue\u0631\u0648\u062cibun\u5927\u4f53\u6e2f\u53f0\u56de\u7738antan\u03c3\u03c4\u03b1\ufffd\ufffd\u064a\u0648\u9535\u9063\u608dtha\u67cfeliness\u0643\u064e\u4e39\u8301\u0644\u064a\u0628\u592f\u5c14\u65afingan\u56fe\u753buariiculeRowIndexobotfan\u6298\u4f10",
+        "normalized": "blue\u0631\u0648\u062cibun\u5927\u4f53\u6e2f\u53f0\u56de\u7738antan\u03c3\u03c4\u03b1\ufffd\ufffd\u064a\u0648\u9535\u9063\u608dtha\u67cfeliness\u0643\u064e\u4e39\u8301\u0644\u064a\u0628\u592f\u5c14\u65afingan\u56fe\u753buariiculeRowIndexobotfan\u6298\u4f10",
+        "sha256": "0dc29c14ba7c57d1ce864fe26a856a02cae6bccc73495abab8aa97b90f86bbfb",
+        "elapsed_s": 4.842100232999655,
+        "usage": {
+          "prompt_tokens": 30,
+          "total_tokens": 62,
+          "completion_tokens": 32,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "created_cache_tokens": 0,
+            "multimodal_tokens": null
+          }
+        }
+      },
+      {
+        "request_id": "qwen38-quality-repeat-0006",
+        "content": "blue\u0631\u0648\u062cibun\u5927\u4f53\u6e2f\u53f0\u56de\u7738antan\u03c3\u03c4\u03b1\ufffd\ufffd\u064a\u0648\u9535\u9063\u608dtha\u67cfeliness\u0643\u064e\u4e39\u8301\u0644\u064a\u0628\u592f\u5c14\u65afingan\u56fe\u753buariiculeRowIndexobotfan\u6298\u4f10",
+        "normalized": "blue\u0631\u0648\u062cibun\u5927\u4f53\u6e2f\u53f0\u56de\u7738antan\u03c3\u03c4\u03b1\ufffd\ufffd\u064a\u0648\u9535\u9063\u608dtha\u67cfeliness\u0643\u064e\u4e39\u8301\u0644\u064a\u0628\u592f\u5c14\u65afingan\u56fe\u753buariiculeRowIndexobotfan\u6298\u4f10",
+        "sha256": "0dc29c14ba7c57d1ce864fe26a856a02cae6bccc73495abab8aa97b90f86bbfb",
+        "elapsed_s": 4.841318692000641,
+        "usage": {
+          "prompt_tokens": 30,
+          "total_tokens": 62,
+          "completion_tokens": 32,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "created_cache_tokens": 0,
+            "multimodal_tokens": null
+          }
+        }
+      },
+      {
+        "request_id": "qwen38-quality-repeat-0007",
+        "content": "blue\u0631\u0648\u062cibun\u5927\u4f53\u6e2f\u53f0\u56de\u7738antan\u03c3\u03c4\u03b1\ufffd\ufffd\u064a\u0648\u9535\u9063\u608dtha\u67cfeliness\u0643\u064e\u4e39\u8301\u0644\u064a\u0628\u592f\u5c14\u65afingan\u56fe\u753buariiculeRowIndexobotfan\u6298\u4f10",
+        "normalized": "blue\u0631\u0648\u062cibun\u5927\u4f53\u6e2f\u53f0\u56de\u7738antan\u03c3\u03c4\u03b1\ufffd\ufffd\u064a\u0648\u9535\u9063\u608dtha\u67cfeliness\u0643\u064e\u4e39\u8301\u0644\u064a\u0628\u592f\u5c14\u65afingan\u56fe\u753buariiculeRowIndexobotfan\u6298\u4f10",
+        "sha256": "0dc29c14ba7c57d1ce864fe26a856a02cae6bccc73495abab8aa97b90f86bbfb",
+        "elapsed_s": 4.842884564000087,
+        "usage": {
+          "prompt_tokens": 30,
+          "total_tokens": 62,
+          "completion_tokens": 32,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "created_cache_tokens": 0,
+            "multimodal_tokens": null
+          }
+        }
+      }
+    ]
+  },
+  "long_context_case": null,
+  "pass_all": false,
+  "baseline_comparisons": {
+    "exact:exact_ok:present": true,
+    "exact:exact_ok:same_normalized": false,
+    "exact:exact_ok:same_hash": false,
+    "exact:copy_phrase:present": true,
+    "exact:copy_phrase:same_normalized": false,
+    "exact:copy_phrase:same_hash": false,
+    "exact:arithmetic:present": true,
+    "exact:arithmetic:same_normalized": false,
+    "exact:arithmetic:same_hash": false,
+    "exact:json_schema:present": true,
+    "exact:json_schema:same_normalized": false,
+    "exact:json_schema:same_hash": false,
+    "exact:factual:present": true,
+    "exact:factual:same_normalized": false,
+    "exact:factual:same_hash": false,
+    "exact:logic:present": true,
+    "exact:logic:same_normalized": false,
+    "exact:logic:same_hash": false,
+    "exact:code_execution:present": true,
+    "exact:code_execution:same_normalized": false,
+    "exact:code_execution:same_hash": false,
+    "repeat:first_hash_same": false
+  },
+  "baseline_match_all": false
+}

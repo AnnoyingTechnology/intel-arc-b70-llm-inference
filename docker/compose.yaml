@@ -1,0 +1,87 @@
+name: b70-vllm
+
+services:
+  qwen38:
+    image: vllm/vllm-openai-xpu@sha256:f01e24f6c7ff01f1e0662234255a1372297d1dbd89d003cf13c8fad3eab1ba4f
+    container_name: b70-vllm-qwen38
+    restart: "no"
+    ipc: host
+    ports:
+      - "127.0.0.1:19622:8000"
+    devices:
+      - /dev/dri/card0:/dev/dri/card0
+      - /dev/dri/renderD128:/dev/dri/renderD128
+    group_add:
+      - "44"
+      - "107"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 4096
+    stop_grace_period: 30s
+    environment:
+      B70_DRAFT_LMHEAD_INT4: "1"
+      B70_DRAFT_MTP_INT4: "1"
+      B70_MTP_BF16_DRAFT: "1"
+      HF_HUB_OFFLINE: "1"
+      ONEAPI_DEVICE_SELECTOR: level_zero:gpu
+      PYTORCH_ALLOC_CONF: expandable_segments:True
+      TRANSFORMERS_OFFLINE: "1"
+      VLLM_TARGET_DEVICE: xpu
+      VLLM_XPU_ENABLE_XPU_GRAPH: "1"
+      ZE_AFFINITY_MASK: "0"
+      ZE_FLAT_DEVICE_HIERARCHY: COMPOSITE
+    volumes:
+      - /srv/models/vllm/Frozenlock--Qwen3.8-27B-int4-AutoRound:/models/Frozenlock--Qwen3.8-27B-int4-AutoRound:ro
+      - /srv/models/vllm/Frozenlock--Qwen3.8-27B-GPTQ-MTP-BF16:/models/Frozenlock--Qwen3.8-27B-GPTQ-MTP-BF16:ro
+      - ./patches/patch_mtp_nightly.py:/patch_mtp.py:ro
+      - ./patches/patch_mtp_boundary.py:/patch_boundary.py:ro
+      - ./patches/patch_draft_lmhead_int4.py:/patch_draft_lmhead_int4.py:ro
+      - ./patches/patch_draft_mtp_int4.py:/patch_draft_mtp_int4.py:ro
+      - ./patches/patch_reasoning_effort_off.py:/patch_reasoning_effort_off.py:ro
+      - vllm-cache:/root/.cache/vllm
+    entrypoint:
+      - /bin/bash
+      - -lc
+    command:
+      - >-
+        set -e;
+        mkdir -p /dev/dri/by-path;
+        ln -sf ../card0 /dev/dri/by-path/pci-0000:03:00.0-card;
+        ln -sf ../renderD128 /dev/dri/by-path/pci-0000:03:00.0-render;
+        python /patch_mtp.py;
+        python /patch_boundary.py;
+        python /patch_draft_lmhead_int4.py;
+        python /patch_draft_mtp_int4.py;
+        python /patch_reasoning_effort_off.py;
+        exec vllm serve /models/Frozenlock--Qwen3.8-27B-GPTQ-MTP-BF16
+        --host 0.0.0.0
+        --port 8000
+        --quantization gptq
+        --dtype float16
+        --max-model-len 196608
+        --kv-cache-memory 8500000000
+        --kv-cache-dtype fp8
+        --max-num-seqs 1
+        --max-num-batched-tokens ${B70_MAX_NUM_BATCHED_TOKENS:-8192}
+        --enable-prefix-caching
+        --prefix-caching-hash-algo sha256
+        --prefix-match-unit 64
+        --enable-prompt-tokens-details
+        --served-model-name qwen38
+        --language-model-only
+        --reasoning-parser qwen3
+        --enable-auto-tool-choice
+        --tool-call-parser qwen3_coder
+        --generation-config vllm
+        --speculative-config '{"method":"mtp","num_speculative_tokens":4}'
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 180s
+
+volumes:
+  vllm-cache:

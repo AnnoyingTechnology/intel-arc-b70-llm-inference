@@ -1,0 +1,27 @@
+{
+  "content_multiplier": 4,
+  "created_at": "2026-08-24T15:17:03+0200",
+  "first": {
+    "elapsed_s": 25.595286688,
+    "finish_reason": "tool_calls",
+    "tool_arguments": "{\"key\": \"B70-TOOL-42\"}",
+    "tool_name": "lookup_record",
+    "usage": {
+      "cached_tokens": 0,
+      "completion_tokens": 34,
+      "prompt_tokens": 32839
+    }
+  },
+  "followup": {
+    "content": "The record for key **B70-TOOL-42** has the value: **cobalt-orbit-731**.\n",
+    "elapsed_s": 3.51675841,
+    "finish_reason": "stop",
+    "usage": {
+      "cached_tokens": 29952,
+      "completion_tokens": 31,
+      "prompt_tokens": 32911
+    }
+  },
+  "model": "qwen38",
+  "schema": 1
+}
