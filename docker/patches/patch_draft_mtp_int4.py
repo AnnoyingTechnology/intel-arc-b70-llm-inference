@@ -59,7 +59,7 @@ def quantize_to_int4(weight: torch.Tensor, group_size: int = 128):
     Returns (qweight, scales, qzeros, group_size):
       qweight: int32 [K//8, N] layout NT (strides[-2] == 1), nibbles
                secuenciales LSB-first, valor almacenado = q + 8 (q in [-8, 7])
-      scales:  fp16 [K//group_size, N]
+      scales:  model dtype [K//group_size, N]
       qzeros:  int8 tensor([8])  -> rama simetrica de int4_gemm_w4a16
     """
     device = weight.device
@@ -85,7 +85,7 @@ def quantize_to_int4(weight: torch.Tensor, group_size: int = 128):
             wc.shape[0], K // 8
         )
         parts.append(packed)
-        scale_parts.append(scale.half())
+        scale_parts.append(scale.to(weight.dtype))
     qweight_contig = torch.cat(parts, dim=0)
     scales_contig = torch.cat(scale_parts, dim=0)
     qweight = qweight_contig.t()
