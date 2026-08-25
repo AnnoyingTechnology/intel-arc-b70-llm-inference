@@ -1,5 +1,7 @@
 # Deterministic all-NaN GDN output for single-sequence prefill lengths `T % 64 == 5` on Xe2/Battlemage
 
+Submitted as [`vllm-project/vllm-xpu-kernels#548`](https://github.com/vllm-project/vllm-xpu-kernels/issues/548).
+
 > **AI disclosure:** OpenAI Codex GPT-5.6-sol drafted this report after conducting
 > the supervised investigation. Anthropic Claude Code Opus 5 and Fable 5 were
 > used as independent adversarial reviewers. The hardware owner reviewed and

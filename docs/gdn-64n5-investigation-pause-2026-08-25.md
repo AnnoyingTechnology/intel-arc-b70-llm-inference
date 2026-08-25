@@ -15,6 +15,9 @@ The failure is localized well enough for an actionable
 is not localized enough to claim a particular kernel instruction, compiler,
 Level Zero, or driver defect, and no source patch is proposed.
 
+Submitted upstream as
+[`vllm-project/vllm-xpu-kernels#548`](https://github.com/vllm-project/vllm-xpu-kernels/issues/548).
+
 Further local work is paused. The only unfinished experiment is a narrower
 producer-queue capture described below. It must not delay external
 investigation and must not be represented as evidence until validated.

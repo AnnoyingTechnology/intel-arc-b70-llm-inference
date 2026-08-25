@@ -82,6 +82,6 @@ The planned Huihui abliterated candidate must match the base model's quality and
 - [Rejected GDN maintenance trial](docs/gdn-maintenance-window-2026-08-24.md): direct probe, failed scheduler A/B and rollback gates.
 - [GDN `64*N+5` investigation pause](docs/gdn-64n5-investigation-pause-2026-08-25.md): authoritative evidence boundary, provenance, artifact manifest, rejected hypotheses and restart point.
 - [GDN diagnostic code map](docs/gdn-diagnostic-code-map.md): trusted, negative-control, superseded and observer-invalid instrumentation.
-- [Upstream issue draft](upstream/vllm-xpu-kernels-64n5-nan-issue.md): validated, submission-ready Intel/XPU escalation.
+- [Upstream issue #548](https://github.com/vllm-project/vllm-xpu-kernels/issues/548): submitted Intel/XPU escalation; the [archived body](upstream/vllm-xpu-kernels-64n5-nan-issue.md) is versioned here.
 - [Huihui plan](docs/huihui-plan.md): abliterated-model A/B and promotion gate.
 - [References](docs/references.md): upstream sources and revisions.
