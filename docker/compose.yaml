@@ -21,6 +21,7 @@ services:
     pids_limit: 4096
     stop_grace_period: 30s
     environment:
+      B70_GDN_PROMPT_PADDING: "1"
       B70_DRAFT_LMHEAD_INT4: "1"
       B70_DRAFT_MTP_INT4: "1"
       B70_MTP_BF16_DRAFT: "1"
@@ -40,6 +41,7 @@ services:
       - ./patches/patch_draft_lmhead_int4.py:/patch_draft_lmhead_int4.py:ro
       - ./patches/patch_draft_mtp_int4.py:/patch_draft_mtp_int4.py:ro
       - ./patches/patch_reasoning_effort_off.py:/patch_reasoning_effort_off.py:ro
+      - ./patches/patch_gdn_prompt_padding.py:/patch_gdn_prompt_padding.py:ro
       - vllm-cache:/root/.cache/vllm
     entrypoint:
       - /bin/bash
@@ -55,6 +57,7 @@ services:
         python /patch_draft_lmhead_int4.py;
         python /patch_draft_mtp_int4.py;
         python /patch_reasoning_effort_off.py;
+        python /patch_gdn_prompt_padding.py;
         exec vllm serve /models/Frozenlock--Qwen3.8-27B-GPTQ-MTP-BF16
         --host 0.0.0.0
         --port 8000

@@ -1,8 +1,9 @@
 # XPU GDN `64*N+5` investigation pause
 
-Status: paused on 2026-08-25 after approximately 24 hours of controlled
-experiments. The stock MTP4 service has been restored and is healthy. No
-workaround or candidate kernel is deployed.
+Status: root-cause work paused on 2026-08-25 after approximately 24 hours of
+controlled experiments. The stock kernel and scheduler are restored. A
+validated one-token prompt guard is deployed with MTP4 retained; it is
+containment, not a source correction.
 
 This is the authoritative handoff. It separates trusted observations from
 hypotheses and supersedes the older "next step" sections in the incident and
@@ -33,6 +34,9 @@ prints generated text.
 ./scripts/gdn_tail_probe.py --lengths 4-6,68-70,132-134
 ./scripts/gdn_tail_probe.py --lengths 1-128
 ```
+
+Those commands express the historical failure oracle. With the active
+containment, use `--expect-tail-guard`.
 
 Observed on the pinned service:
 
@@ -173,9 +177,10 @@ overlay hashes are in [`architecture.md`](architecture.md).
 
 ## Artifact manifest
 
-These artifacts are synthetic and contain no OpenCode transcript. They are
-currently retained locally under `/tmp`; the hashes identify the exact evidence
-used here.
+These artifacts are synthetic and contain no OpenCode transcript. The minimal
+32 MiB replay set and complete paused source-tree diff are preserved under the
+Git-ignored `/home/julien/Documents/B70/.artifacts/gdn-64n5/`; the original
+`/tmp` copies are no longer the only copy.
 
 | Artifact | SHA-256 |
 |---|---|
@@ -233,6 +238,28 @@ Neither reviewer supplied a source-level root cause that survived the local
 evidence. This is recorded to prevent future investigators from treating an
 independent hypothesis as a confirmed diagnosis.
 
+## Validated containment after the pause
+
+`docker/patches/patch_gdn_prompt_padding.py` runs after rendering and changes
+only token prompts whose final length is `64*N+5`. Raw completions append one
+tokenizer-verified space token. Chat prompts insert it before the final
+`<|im_end|>`, so the assistant-generation prefix remains unchanged. Earlier
+tokens and `cache_salt` are preserved, retaining aligned prefix-cache reuse.
+
+Validation on the real service:
+
+- exhaustive raw 1--128: 128/128 matched, no NaNs;
+- 4/5/6, 68/69/70, 132/133/134: all finite, affected lengths reported one
+  additional inference token;
+- exact chat canary at rendered 68/69/70: `OK` at all three lengths;
+- guarded tool selection and guarded tool-result ingestion both correct;
+- unaffected five-family p512/g128: 92.48 tok/s median, 0.383 s median TTFT.
+
+An initial version appended the token after the assistant-generation marker.
+Although finite, it caused an immediate empty stop at the guarded chat length.
+The exact-output canary rejected that placement. It was never accepted as the
+final configuration.
+
 ## Exact pause point
 
 The only unfinished focused experiment replaces five diagnostic ATen `copy_`
@@ -250,9 +277,10 @@ resume broad instrumentation or another scheduler workaround.
 
 ```text
 container: b70-vllm-qwen38
-image: pinned stock image above
+image/kernel/scheduler: pinned stock versions above
 state: running, healthy
 MTP: 4 speculative tokens enabled
+active containment: post-tokenization one-token prompt guard
 diagnostic mounts: none
 scheduler workaround: absent
 candidate XPU-kernel binary: absent

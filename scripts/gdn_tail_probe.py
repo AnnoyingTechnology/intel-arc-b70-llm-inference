@@ -76,9 +76,13 @@ def probe(args: argparse.Namespace, length: int) -> dict[str, Any]:
         },
         method="POST",
     )
+    guarded = args.expect_tail_guard and length % args.modulus == args.remainder
     expected_nan = (
-        not args.expect_fixed and length % args.modulus == args.remainder
+        not args.expect_fixed
+        and not args.expect_tail_guard
+        and length % args.modulus == args.remainder
     )
+    expected_prompt_tokens = length + int(guarded)
     try:
         with urllib.request.urlopen(request, timeout=args.timeout) as response:
             result = json.load(response)
@@ -96,6 +100,7 @@ def probe(args: argparse.Namespace, length: int) -> dict[str, Any]:
     return {
         "requested_prompt_tokens": length,
         "observed_prompt_tokens": prompt_tokens,
+        "expected_tail_guard": guarded,
         "expected_nan": expected_nan,
         "observed_nan": observed_nan,
         "finite_top_logprobs": finite,
@@ -103,7 +108,7 @@ def probe(args: argparse.Namespace, length: int) -> dict[str, Any]:
         "status": status,
         "matched_expectation": (
             observed_nan == expected_nan
-            and (prompt_tokens in (None, length))
+            and (prompt_tokens in (None, expected_prompt_tokens))
             and (observed_nan or finite == total == 20)
         ),
     }
@@ -128,8 +133,15 @@ def main() -> None:
         action="store_true",
         help="require every requested length to return finite logprobs",
     )
+    parser.add_argument(
+        "--expect-tail-guard",
+        action="store_true",
+        help="require finite output and one appended token for 64*N+5 inputs",
+    )
     parser.add_argument("--timeout", type=float, default=60)
     args = parser.parse_args()
+    if args.expect_fixed and args.expect_tail_guard:
+        parser.error("--expect-fixed and --expect-tail-guard are mutually exclusive")
 
     results = [probe(args, length) for length in args.lengths]
     for result in results:
@@ -146,7 +158,15 @@ def main() -> None:
                 "expected_failure_rule": (
                     "none (fixed)"
                     if args.expect_fixed
-                    else f"prompt_tokens % {args.modulus} == {args.remainder}"
+                    else (
+                        f"pad one token when prompt_tokens % {args.modulus} "
+                        f"== {args.remainder}"
+                        if args.expect_tail_guard
+                        else (
+                            f"prompt_tokens % {args.modulus} "
+                            f"== {args.remainder}"
+                        )
+                    )
                 ),
                 "unexpected_lengths": unexpected,
             },

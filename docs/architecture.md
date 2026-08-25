@@ -56,8 +56,9 @@ Applied in this order from `/home/julien/Documents/B70/docker/patches`:
 3. `patch_draft_lmhead_int4.py` — `ffae41926d5f05f4f38bb985301b5e572092441d06d6063c8820a63a39b8cefc`.
 4. `patch_draft_mtp_int4.py` — `4df179c3e77fd7a248f9b9c0b60217c60caea14ebfd16b7860536fbff3b2a1e9`.
 5. `patch_reasoning_effort_off.py` — `2ac1af03723e80eab2a05cb5a4ea8ebfc1021082607d43ffc54071da008e0641`.
+6. `patch_gdn_prompt_padding.py` — `0188d68fdad6ebbf8946bd330617c07d1348c21c789b1fa37bce8a0ec6a01eff`.
 
-The fifth patch is a frontend compatibility shim: OpenCode 1.18.4 sends its visible `off` reasoning variant literally, while vLLM accepts `none`. It admits only that alias and normalizes it to `none`. The image is digest-pinned because all patches depend on exact source anchors. Revalidate and update every patch before changing the image.
+The fifth patch is a frontend compatibility shim: OpenCode 1.18.4 sends its visible `off` reasoning variant literally, while vLLM accepts `none`. It admits only that alias and normalizes it to `none`. The sixth is a contained workaround for upstream XPU-kernels issue #548: after rendering, only a prompt with length `64*N+5` receives one space token. Chat inserts it before the final `<|im_end|>` so the assistant-generation prefix is unchanged; raw completions append it. The image is digest-pinned because all patches depend on exact source anchors. Revalidate and update every patch before changing the image.
 
 ## Network and lifecycle
 

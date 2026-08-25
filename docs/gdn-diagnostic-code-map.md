@@ -5,6 +5,11 @@ or for trusted evidence. None of these patches is mounted by the stock service.
 The authoritative conclusions are in
 [`gdn-64n5-investigation-pause-2026-08-25.md`](gdn-64n5-investigation-pause-2026-08-25.md).
 
+The sole active containment patch is
+`docker/patches/patch_gdn_prompt_padding.py`. It changes no kernel or scheduler:
+it moves only rendered prompts with length `64*N+5` to the neighboring safe
+length. All diagnostic patches listed below remain unmounted.
+
 ## Trusted evidence producers
 
 | File | Purpose |

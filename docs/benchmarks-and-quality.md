@@ -91,3 +91,23 @@ prior-output hash parity, a 30,350-token needle and a 32K tool flow. Its recover
 performance cells measured 85.07 tok/s at p512/g128 and 88.39 tok/s at
 p8192/g128, with 1,570 prompt tok/s at 8K. See
 [`gdn-maintenance-window-2026-08-24.md`](gdn-maintenance-window-2026-08-24.md).
+
+## GDN prompt-guard containment gate
+
+The 2026-08-25 containment appends one token only for raw completion prompts
+with length `64*N+5`; chat inserts that token before the final `<|im_end|>` so
+the assistant-generation prefix is unchanged. Its deployment gates passed:
+
+- exhaustive raw 1--128 sweep: 128/128 finite, with 5 and 69 reported as 6 and
+  70 inference tokens;
+- raw neighbors 132/133/134: all finite, with 133 reported as 134;
+- exact deterministic chat output at rendered lengths 68/69/70: `OK` for all
+  three, with only 69 entering inference as 70;
+- guarded tool call and guarded tool-result ingestion: `lookup_record` selected
+  correctly and `cobalt-orbit-731` recovered; inference lengths 326 and 454;
+- unaffected five-family p512/g128 performance: 92.48 tok/s median decode and
+  0.383 s median TTFT at 210 W, consistent with the prior 91.98 tok/s cell.
+
+The first attempted placement after the assistant-generation marker produced
+an empty one-token stop despite finite logits. The semantic canary rejected it
+before handoff. Only the final-message placement is deployed.

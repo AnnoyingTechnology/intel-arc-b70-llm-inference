@@ -207,6 +207,13 @@ acceptance and gibberish, MTP/prefix-cache/FP8 corruption, and Qwen endless
 
 ## Immediate recovery
 
+The deployed service now prevents new occurrences with the post-tokenization
+guard in [`patch_gdn_prompt_padding.py`](../docker/patches/patch_gdn_prompt_padding.py).
+It inserts one space inside the final chat turn only when the rendered prompt
+has remainder five, retaining MTP4 and prefix caching. The exhaustive 1--128
+finite-logprob sweep and guarded chat/tool gates pass. This is a validated
+containment measure, not the upstream kernel fix.
+
 For a stuck session, use a new private cache namespace and ensure the newly
 rendered prompt does not contain `64*N+5` tokens. Adding text is effective only
 if tokenization actually changes the count; the earlier space and `x` controls

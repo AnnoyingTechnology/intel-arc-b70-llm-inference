@@ -61,8 +61,7 @@ Automatic tool selection is enabled server-side with vLLM's `qwen3_coder` parser
 Automatic prefix caching is enabled with SHA-256 keys and a 64-token prefix-match unit. Repeated conversations and tool-call follow-ups can reuse cached context inside the XPU hybrid cache's larger physical blocks; cold, unrelated prompts still pay normal prefill cost. Cache entries are in-memory and disappear when the service restarts.
 
 The 8,192-token scheduler budget is deliberately literal and divisible by 64.
-Do not reintroduce an environment override or set a long-prefill threshold with
-remainder five modulo 64 while the staged tail guard remains final-chunk-only.
+Do not reintroduce an environment override without repeating the GDN sweep.
 
 **Known issue:** the XPU GDN prefill path returns non-finite logits exactly when
 the scheduled prompt length has remainder five modulo its 64-token kernel
@@ -72,11 +71,28 @@ turn can leave bad reusable recurrent state. See
 [`repetition-incident.md`](repetition-incident.md) before trusting the service
 for unattended long agent sessions.
 
-For immediate containment, retry with Qwen's sampler, a new private
-`cache_salt`, and a rendered prompt whose token count is not `64*N+5`.
-Changing the salt isolates damaged state but does not repair a cold request at
-the failing remainder. Do not persist or publish the salt, and do not mistake
-this procedure for the pending server-side fix. MTP4 remains enabled.
+Compose enables `B70_GDN_PROMPT_PADDING=1`. After rendering, the startup patch
+changes only prompts with length `64*N+5`: chat inserts one tokenizer-verified
+space before the final `<|im_end|>`, preserving the assistant-generation
+prefix; raw completions append the space. All preceding tokens, the cache salt,
+MTP4, FP8 KV and the scheduler remain unchanged. Validate it with:
+
+```bash
+./scripts/gdn_tail_probe.py --lengths 1-128 --expect-tail-guard
+```
+
+The accepted deployment passed 128/128 raw requests, exact `OK` parity at
+rendered chat lengths 68/69/70, and tool-call plus tool-result flows where both
+guarded prompts had remainder five. This is containment, not a kernel fix.
+
+A namespace that processed the old failure may contain poisoned recurrent
+state. The service recreation that deployed the guard cleared all in-memory
+prefixes; otherwise rotate that session's private `cache_salt` once. A new salt
+alone cannot repair an unguarded cold request at the failing remainder.
+
+Rollback is to set `B70_GDN_PROMPT_PADDING: "0"`, recreate only `qwen38`, and
+expect the historical 5-token NaN oracle to return. Do not leave the guard off
+for normal use on the affected runtime.
 
 The rejected MTP-preserving scheduler experiment remains at
 [`patch_xpu_gdn_tail.py`](../docker/patches/patch_xpu_gdn_tail.py), but Compose

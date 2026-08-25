@@ -4,7 +4,7 @@ This Intel Arc Pro B70 was quite painful to get rolling properly, so here is wha
 
 This repository documents the reproducible Qwen3.8-27B service for one 32 GiB B70: a transparent INT4 target, MTP4 speculative decoding, FP8 KV cache, automatic prefix caching, and a persisted 210 W efficiency cap.
 
-> **Paused investigation (2026-08-25):** raw prompts fail with NaN logprobs exactly when `prompt_tokens % 64 == 5`. A trusted producer-side capture localizes the first non-finite boundary to layer-4 GDN: its inputs, projections, and `z` are finite, while all five active `core_attn_out` rows are NaN. Exact operands replay finitely outside the live compiled forward, and known fixes #344/#411/#437/#439 are present. The stock MTP4 service is restored; no correction is deployed. See the [authoritative handoff](docs/gdn-64n5-investigation-pause-2026-08-25.md) and [upstream issue draft](upstream/vllm-xpu-kernels-64n5-nan-issue.md).
+> **Paused root-cause investigation (2026-08-25):** raw prompts fail with NaN logprobs exactly when `prompt_tokens % 64 == 5`. Trusted capture localizes the first non-finite boundary to layer-4 GDN `core_attn_out`; exact operands replay finitely, and known fixes #344/#411/#437/#439 are present. A contained prompt guard now inserts one space token inside the final chat turn—or appends it to a raw completion—only for the failing remainder. The exhaustive 1–128 oracle, exact 68/69/70 chat parity, and guarded tool flow pass with MTP4 retained. This is a bypass, not a kernel fix. See the [authoritative handoff](docs/gdn-64n5-investigation-pause-2026-08-25.md) and [upstream issue #548](https://github.com/vllm-project/vllm-xpu-kernels/issues/548).
 
 ## Result
 
