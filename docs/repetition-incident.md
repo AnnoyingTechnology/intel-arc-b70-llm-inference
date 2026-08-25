@@ -1,9 +1,12 @@
 # Long-context token-0 repetition incident
 
-Status on 2026-08-24: the trigger is reduced to a fully synthetic, deterministic
-XPU GDN failure. The first scheduler-split candidate failed its mandatory raw
-API gate and was rolled back; no server-side correction is deployed. MTP4
-remains enabled. Do not treat a repetition penalty or disabling MTP as the fix.
+Status on 2026-08-25: investigation is paused and the stock MTP4 service is
+healthy. Trusted producer-side capture now localizes the first non-finite
+boundary to layer-4 GDN `core_attn_out`; exact operands replay finitely outside
+the live compiled forward. No correction is deployed. The authoritative
+current handoff is
+[`gdn-64n5-investigation-pause-2026-08-25.md`](gdn-64n5-investigation-pause-2026-08-25.md).
+Do not treat a repetition penalty or disabling MTP as the fix.
 
 ## Symptom
 
@@ -224,7 +227,11 @@ has remainder five. It is a containment measure, not the permanent fix: a
 static salt can accumulate bad state, and changing it on every turn throws away
 the TTFT benefit of prefix caching.
 
-## Next controlled fix gate
+## Historical controlled fix gate
+
+This section records the earlier plan and is superseded by the authoritative
+2026-08-25 pause handoff linked above. In particular, the exact live inputs
+were captured and replayed, and the replay remained finite.
 
 1. Keep MTP4, FP8 KV, the target, draft overlay, scheduler budget and 210 W cap.
 2. Capture the real first-prefill GDN inputs and metadata for a five-token raw

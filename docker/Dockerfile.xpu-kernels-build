@@ -1,0 +1,10 @@
+FROM intel/oneapi:2026.0.0-devel-ubuntu24.04@sha256:5a71507a519c7c05302b53fa32487304df2ee211d6d737d7d948eb53726d4d6f
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        git \
+        python3-dev \
+        python3-pip \
+        python3-venv \
+    && rm -rf /var/lib/apt/lists/*

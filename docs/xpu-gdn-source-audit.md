@@ -1,10 +1,11 @@
 # XPU GDN `64*N+5` source audit
 
-Status on 2026-08-24: the public API reproducer is conclusive, but the exact
-faulting instruction inside the compiled XE2 kernel is not. The synthetic
-direct-operator matrix was finite and the first scheduler split failed its API
-gate, so it was rolled back. No kernel binary has been replaced. This audit was
-cross-checked against the upstream source with Claude Opus 5.
+Status on 2026-08-25: the public API reproducer is conclusive, but the exact
+faulting instruction remains unknown. Trusted capture places the first
+non-finite boundary at layer-4 GDN `core_attn_out`, while exact operand replay
+is finite. No candidate is deployed. See the authoritative
+[`investigation pause handoff`](gdn-64n5-investigation-pause-2026-08-25.md);
+the prospective experiments below are historical unless restated there.
 
 ## Established boundary
 
@@ -33,7 +34,11 @@ chunk tail.
 
 ## Version forensics
 
-The live package reports `vllm-xpu-kernels 0.1.12.3`. The XE2 GDN kernel source
+The live package reports `vllm-xpu-kernels 0.1.12.3`, an unpublished package
+version with no corresponding public tag. Its exact source commit is
+`e8b12aefae6b9df9b712799eef0ec0cd9ce7ac88`, from the
+`release/v0.1.12.2` lineage. Fixes #344, #411, #437 and #439 are present. A
+controlled #537 backport did not change the failure. The XE2 GDN kernel source
 blob is identical (`88d232e3893e1693db007b4e06a524df7358f978`) at all of these
 refs:
 
