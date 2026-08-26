@@ -8,7 +8,7 @@ This repository documents the reproducible Qwen3.8-27B service for one 32 GiB B7
 
 ## Result
 
-The validated latest-stack candidate exposes `qwen38` at `http://127.0.0.1:19623/v1`. The pinned `19622` service remains stopped until the source correction is promoted into its Compose definition.
+The validated patched service exposes `qwen38` at the established `http://127.0.0.1:19622/v1` endpoint. Existing OpenCode sessions therefore require no provider change or restart.
 
 | Measurement at 210 W | Result |
 |---|---:|

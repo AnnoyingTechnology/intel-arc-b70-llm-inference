@@ -356,7 +356,7 @@ the focused local classifier A/B above subsequently validated that diagnosis.
 
 ```text
 container: b70-vllm-qwen38-latest
-endpoint: http://127.0.0.1:19623/v1
+endpoint: http://127.0.0.1:19622/v1
 vLLM/XPU-kernels: 46638857f / a397c58eb
 state: running with classifier-only source correction; focused gates pass
 MTP: 4 speculative tokens enabled
