@@ -207,11 +207,26 @@ option. Thus tool calls can be disabled without changing the cached Qwen token
 prefix. Anthropic, Bedrock and Gemini lower `tool_choice: none` differently and
 must keep the existing serialized fallback until separately proven safe.
 
+An offline check with the deployed Qwen tokenizer produced identical rendered
+prompts for `tool_choice: auto` and `tool_choice: none`: 303 tokens in both
+cases. No inference request was sent.
+
 An adversarial review by Claude Opus 5 agreed that exact prefix reuse is
 feasible, but rejected a universal default because it can reopen the orphaned
 tool-call and signed-reasoning/provider-ordering failures fixed by #40800. It
 also identified request-building duplication as a future cache-drift risk: the
 ordinary and compaction paths should share one prefix-assembly helper.
+
+The reviewed implementation is public at
+[AnnoyingTechnology/opencode:cache-compaction](https://github.com/AnnoyingTechnology/opencode/tree/cache-compaction),
+commit `e41db562e`. It keeps serialized compaction as the default and adds the
+guarded `compaction.preserve_prefix_cache` option for same-model,
+OpenAI-compatible requests. The branch includes generated schema/SDK changes,
+prefix-equality tests and fallback tests. Validation passed: 119 tests, two
+expected skips, and the repository-wide typecheck. It is linked from
+[PR #42506](https://github.com/anomalyco/opencode/pull/42506#issuecomment-5425656358);
+do not open a competing PR. Let its author adopt or revise the implementation,
+then tag a maintainer only if the thread stalls.
 
 No live inference request, service restart or local OpenCode replacement was
 performed during this upstream review.
