@@ -51,3 +51,20 @@ The larger chunk was 2.0% slower, used 1.3% more energy/token, and doubled first
 The service already uses vLLM's XPU GDN custom operation from `vllm-xpu-kernels 0.1.12.3`. No server flag exposed a faster single-XPU long-prefill backend in the pinned build. Upstream XPU work on Qwen GDN kernels remains active; future image/kernel releases should be retested with the same 8K/32K/100K fixtures before adoption.
 
 For OpenCode, keep stable system/project context at the beginning of the conversation and append tool turns. Restarting the server clears the in-memory prefix cache; changing early prompt content or tool schemas also invalidates the reusable prefix.
+
+## Long-session eviction warning
+
+Automatic prefix caching does not reserve memory per OpenCode session. On
+2026-08-26, one approximately 21K side-agent turn generated two cold API
+requests and made a warm approximately 157K main session miss its entire usable
+prefix. The next main request reused the rebuilt prefix, proving that the cold
+prefill was real.
+
+The current hybrid-cache setting, `prefix_cache_retention_interval=0`, keeps
+only semantic GDN/Mamba replay checkpoints. Under LRU pressure, losing the
+latest usable recurrent checkpoint can invalidate reuse of the whole hybrid
+prefix rather than merely its tail. This mechanism is strongly supported by
+the installed source but still needs an event-level reproduction and eviction
+trace. Do not experiment with the active 162K session. See
+[`prefix-cache-eviction-incident-2026-08-26.md`](prefix-cache-eviction-incident-2026-08-26.md)
+for exact accounting, evidence limits and the focused A/B plan.
