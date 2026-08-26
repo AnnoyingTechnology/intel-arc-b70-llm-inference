@@ -151,6 +151,13 @@ aborted compactions, so the fork's deliberately first-compaction-only replay
 gate will use the serialized fallback for its recovery. Test the opt-in path on
 a new session.
 
+The cause was a bad local model declaration: `compaction.reserved` was 10,000,
+but the model had no `limit.input`. In that OpenCode branch the reserve is
+ignored and usable context becomes only `context - output` (180,224). The model
+now declares the truthful prompt ceiling `input: 180224`; OpenCode therefore
+applies the additional 10,000-token reserve and triggers around 170,224 tokens.
+Both stock and fork configuration decoders were checked after the change.
+
 OpenCode 1.18.4 already puts its compaction instruction after the selected
 conversation history. Prompt placement is not the cache failure. Its compaction
 request also does all of the following:
