@@ -129,6 +129,49 @@ This was verified by rendering the same synthetic message locally with the
 deployed tokenizer/template for `off`, `low`, `medium` and `xhigh`. No inference
 request was sent.
 
+## OpenCode compaction cold-prefill
+
+An observed local-B70 session reached 180,980 tokens and entered compaction.
+This boundary is expected: the configured 196,608-token context minus the
+16,384-token output allowance is 180,224 tokens. The configured 10,000-token
+compaction reserve is smaller and therefore does not determine the boundary.
+
+OpenCode 1.18.4 already puts its compaction instruction after the selected
+conversation history. Prompt placement is not the cache failure. Its compaction
+request also does all of the following:
+
+- passes `system: []` instead of the normal agent system prompt;
+- passes `tools: {}` instead of the normal tool schemas;
+- serializes historical tool output with a 2,000-character cap;
+- preserves the triggering message's reasoning variant.
+
+For Qwen, system text and tool schemas are rendered at the beginning of the
+token stream. Removing them changes the first cache block. Truncating any early
+tool result creates another divergence. The appended instruction therefore
+cannot reuse the warm approximately 181K prefix despite being appended.
+
+The `experimental.session.compacting` plugin hook can replace the appended
+prompt or add context. It cannot restore the original system/tool envelope or
+disable historical tool-output truncation, so it cannot implement
+cache-preserving compaction alone.
+
+A proper cache-preserving compaction path should rebuild the exact ordinary
+request prefix—same system text, tool definitions, reasoning variant, cache
+salt and unmodified selected history—then append the summary request. Tool
+execution should be disabled through a non-tokenized request control such as
+`tool_choice: none`, while retaining identical tool definitions for template
+rendering. After the summary is stored, the next ordinary turn will necessarily
+start from the new short summary and be cold, but that prefill is cheap. The
+expensive summary generation should have reused nearly all selected history.
+
+This requires an OpenCode change, not a vLLM setting. Validate it first with a
+synthetic long session and require the compaction request's `cached_tokens` to
+cover the unchanged selected head. Also test long tool outputs, thinking-level
+stability, summary correctness and the post-compaction continuation. A separate
+fast compaction model is the available configuration-level alternative, but it
+avoids rather than fixes B70 prefix reuse and may move private history to another
+provider.
+
 ## Focused reproduction plan
 
 Run only after the active OpenCode work is disposable or preserved elsewhere.
