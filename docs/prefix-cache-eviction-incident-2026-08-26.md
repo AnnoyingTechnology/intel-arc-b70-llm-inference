@@ -141,6 +141,16 @@ automatic compaction request then processed 137,459 input tokens with zero
 cache read and took 443.031 seconds (7 minutes 23.031 seconds). This is direct
 local evidence of the latency cliff, not an estimate.
 
+A later stock request exposed the boundary exactly: vLLM rejected 180,225 input
+tokens plus the requested 16,384 output tokens, totaling 196,609 against the
+196,608-token context. OpenCode immediately scheduled overflow compaction
+again. The TUI's approximately 162K display was the preceding compaction
+request, not the complete next wire prompt; system and tool-template tokens
+made the rejected prompt larger. This session already contains completed and
+aborted compactions, so the fork's deliberately first-compaction-only replay
+gate will use the serialized fallback for its recovery. Test the opt-in path on
+a new session.
+
 OpenCode 1.18.4 already puts its compaction instruction after the selected
 conversation history. Prompt placement is not the cache failure. Its compaction
 request also does all of the following:
@@ -235,8 +245,14 @@ The fork is installed without replacing stock OpenCode:
 - launcher: `/home/julien/.local/bin/opencode-cache`;
 - binary: `/home/julien/.local/lib/opencode-cache/opencode-e41db562e`;
 - source commit: `e41db562e`;
-- reported version: `0.0.0-cache-compaction-202608261354`;
-- SHA-256: `ac5669d11e9d950e8c6e4655d9539df8ebeb4c5eb3244ab44fe62e37b9734364`.
+- reported version: `1.18.23-cachecompaction.1`;
+- SHA-256: `21087fbdab6bff78548c15b98e6da7dc8e77864998330a112dc3f966f6dc72b6`.
+
+The first binary inherited the branch name as its installation channel and
+therefore selected an isolated `opencode-cache-compaction.db`. It was rebuilt
+with channel `latest`, which selects the stock `opencode.db`. The 1.18.4 and
+fork database schemas are identical; the target session was found by ID. The
+isolated database contained zero sessions and was removed.
 
 The launcher injects only
 `{"compaction":{"preserve_prefix_cache":true}}` through
