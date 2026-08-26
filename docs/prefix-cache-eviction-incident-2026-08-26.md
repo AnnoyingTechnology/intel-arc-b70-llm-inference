@@ -110,6 +110,25 @@ not captured.
 5. Are the two cumulative preemptions related? Correlate request timestamps with
    scheduler logs before drawing a conclusion.
 
+## Thinking-level cache invalidation
+
+Changing OpenCode's `reasoningEffort` also prevents reuse of the existing
+prefix for the next request. This is not merely a sampling parameter in this
+deployment: Qwen's chat template renders `low` and `xhigh` as different text at
+the beginning of the system block, renders no extra reasoning instruction for
+`medium`, and changes the thinking wrapper for `off`. The first 64-token cache
+block therefore differs, so vLLM cannot match the later 162K suffix.
+
+The old variant's cache is not explicitly deleted. Switching effort creates a
+separate prefix branch; switching back can reuse the old branch only if LRU
+pressure has not evicted it. With the current nearly full hybrid cache and
+sparse recurrent checkpoints, assume that changing effort can force a complete
+cold prefill and can endanger the original warm branch.
+
+This was verified by rendering the same synthetic message locally with the
+deployed tokenizer/template for `off`, `low`, `medium` and `xhigh`. No inference
+request was sent.
+
 ## Focused reproduction plan
 
 Run only after the active OpenCode work is disposable or preserved elsewhere.
