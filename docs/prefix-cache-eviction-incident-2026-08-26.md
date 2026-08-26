@@ -228,6 +228,27 @@ expected skips, and the repository-wide typecheck. It is linked from
 do not open a competing PR. Let its author adopt or revise the implementation,
 then tag a maintainer only if the thread stalls.
 
+### Local side-by-side installation
+
+The fork is installed without replacing stock OpenCode:
+
+- launcher: `/home/julien/.local/bin/opencode-cache`;
+- binary: `/home/julien/.local/lib/opencode-cache/opencode-e41db562e`;
+- source commit: `e41db562e`;
+- reported version: `0.0.0-cache-compaction-202608261354`;
+- SHA-256: `ac5669d11e9d950e8c6e4655d9539df8ebeb4c5eb3244ab44fe62e37b9734364`.
+
+The launcher injects only
+`{"compaction":{"preserve_prefix_cache":true}}` through
+`OPENCODE_CONFIG_CONTENT`; normal configuration, credentials and sessions are
+otherwise shared. It refuses to start if that environment variable is already
+set rather than discarding caller configuration.
+
+Use `opencode-cache` for a new TUI, `opencode-cache -c` to continue the latest
+session, or `opencode-cache -s SESSION_ID` for a specific session. The current
+running process is unchanged. Use `opencode` to run the stock 1.18.4 binary.
+Do not run `opencode-cache upgrade`; rebuild from the reviewed fork instead.
+
 No live inference request, service restart or local OpenCode replacement was
 performed during this upstream review.
 
