@@ -1,9 +1,7 @@
 # XPU GDN `64*N+5` investigation pause
 
-Status: root-cause work paused on 2026-08-25 after approximately 24 hours of
-controlled experiments. The stock kernel and scheduler are restored. A
-validated one-token prompt guard is deployed with MTP4 retained; it is
-containment, not a source correction.
+Status: root cause and a minimal correction were validated on 2026-08-26. The
+2026-08-25 evidence below remains the historical narrowing record.
 
 This is the authoritative handoff. It separates trusted observations from
 hypotheses and supersedes the older "next step" sections in the incident and
@@ -11,17 +9,77 @@ source-audit notes.
 
 ## Decision
 
-The failure is localized well enough for an actionable
-`vllm-project/vllm-xpu-kernels` issue and Intel/XPU maintainer involvement. It
-is not localized enough to claim a particular kernel instruction, compiler,
-Level Zero, or driver defect, and no source patch is proposed.
+The defect is in vLLM's legacy `GPUModelRunner` graph classifier, not in GDN
+kernel arithmetic. `_is_uniform_decode()` used only batch shape. It did not
+exclude prompt chunks, even though `vllm.v1.worker.utils` already warns that a
+prompt can have a decode batch's shape and its newer runner uses
+`get_uniform_decode_token_count(..., has_prefill)`.
 
 Submitted upstream as
 [`vllm-project/vllm-xpu-kernels#548`](https://github.com/vllm-project/vllm-xpu-kernels/issues/548).
 
-Further local work is paused. The only unfinished experiment is a narrower
-producer-queue capture described below. It must not delay external
-investigation and must not be represented as evidence until validated.
+The submitted XPU-kernels issue remains useful as the public reproduction
+record, but the correction belongs in `vllm-project/vllm`.
+
+## Validated root cause and correction (2026-08-26)
+
+With MTP4, `uniform_decode_query_len = 1 + num_speculative_tokens = 5`.
+The affected classifier was:
+
+```python
+(max_num_scheduled_tokens == uniform_decode_query_len)
+and (num_tokens == max_num_scheduled_tokens * num_reqs)
+```
+
+A one-request five-token prompt tail satisfies both expressions. It was
+therefore dispatched as a FULL uniform-decode graph even though it was a
+prefill. Hybrid align-mode scheduling explains the complete residue rule: a
+prompt of `64*N+5` reaches a final scheduled prompt chunk of five tokens.
+
+The graph inventory on this exact configuration contained one PIECEWISE and
+one FULL descriptor, both at five tokens:
+
+```text
+PIECEWISE: BatchDescriptor(num_tokens=5, num_reqs=None, uniform=False)
+FULL:      BatchDescriptor(num_tokens=5, num_reqs=1, uniform=True)
+```
+
+Layer-4 reserved block 0 was measured immediately around capture:
+
+| State | Before graph capture | After graph capture |
+|---|---:|---:|
+| convolution, 30,720 values | 0 non-finite, 0 nonzero | 30,720 non-finite, 30,720 nonzero |
+| SSM, 786,432 values | 0 non-finite, 0 nonzero | 786,432 non-finite, 786,432 nonzero |
+
+Two independent controls established causality before the classifier patch:
+
+- disabling XPU graphs fixed every tested length while ordinary
+  `torch.compile` remained enabled;
+- clearing only reserved SSM block 0 after capture fixed 1--128 and 49,925;
+  clearing only convolution state did not.
+
+The principled correction adds `has_prefill` to `_is_uniform_decode()` and
+requires it to be false unless dummy capture explicitly forces the mode. No
+length, model, MTP, scheduler, or XPU exception is involved. The tested runtime
+patch is [`patch_uniform_decode_prefill.py`](../docker/patches/patch_uniform_decode_prefill.py).
+
+Crucially, the final test left block 0 poisoned after graph capture and changed
+only the classifier. Results:
+
+- 4/5/6, 68/69/70, and 132/133/134: all 20/20 finite;
+- exhaustive 1--128: 128/128 finite, no unexpected length;
+- original 49,925-token case: 20/20 finite;
+- deterministic quality: 7/7 exact canaries and 8/8 repeat stability;
+- all normalized outputs and hashes matched the retained Unsloth reference;
+- p512/g128 five-family cell at 210 W: 88.27 tok/s median decode,
+  1,292 prompt tok/s median, 0.393 s median TTFT.
+
+The candidate uses vLLM `46638857f` and XPU-kernels `a397c58eb`. Raw JSONL and
+quality/performance outputs are retained under the Git-ignored
+`.artifacts/latest-stack/` directory. This repository contains the validated
+temporary runtime patch. A vLLM maintainer is preparing the complete upstream
+change, including both call sites and regression tests; that exact PR must be
+validated here before the local patch is retired.
 
 ## Deterministic end-to-end oracle
 
@@ -227,16 +285,16 @@ the producer-side layer-4 boundary is trustworthy and the deeper debug-copy
 branch is not.
 
 Fable 5 was run manually with online and upstream source access but without
-access to this local repository. Its strongest proposal was a hidden-operand
-read selected by `num_speculative_tokens + 1 == 5`. Local static inspection
-found no such count-based routing in the exact installed source, and the
-poisoned live-layout replay remained finite, so that mechanism is rejected.
-Its useful contribution was identifying the hidden state layout as a replay
-gap that needed to be closed.
+access to this local repository. It correctly identified both decisive clues:
+the hidden recurrent-state operand and the coincidence
+`num_speculative_tokens + 1 == 5`. Its proposed count-based routing was not in
+the XPU GDN wrapper; it was one layer higher in vLLM's graph classifier. The
+later before/after-capture measurement and classifier-only A/B converted that
+hypothesis into locally validated evidence.
 
-Neither reviewer supplied a source-level root cause that survived the local
-evidence. This is recorded to prevent future investigators from treating an
-independent hypothesis as a confirmed diagnosis.
+Claude Code Opus 5 did not identify the final classifier line, but its earlier
+demands for trusted producer-side captures prevented the invalid debug-copy
+branch from being mistaken for a kernel defect.
 
 ## Validated containment after the pause
 
@@ -291,33 +349,19 @@ Results:
 
 This disproves the proposed explanation that upgrading XPU-kernels alone has
 silently fixed the defect. Another B70 contributor independently reproduced it
-on the same revisions. Their still-unaudited Fable 5 analysis points to vLLM
-graph dispatch rather than kernel arithmetic; that is consistent with the live
-versus replay boundary, but remains a hypothesis rather than a validated root
-cause.
+on the same revisions. Their Fable 5 analysis pointed to vLLM graph dispatch;
+the focused local classifier A/B above subsequently validated that diagnosis.
 
-## Exact pause point
-
-The only unfinished focused experiment replaces five diagnostic ATen `copy_`
-calls in the GDN wrapper with `vllmGetQueue().memcpy`, without changing an
-inference kernel. Its purpose is to determine whether the invalid observer was
-using a copy queue not ordered with the producer queue. The reduced kernel
-build unexpectedly began reconfiguring a oneDNN dependency and was stopped.
-
-The candidate build is incomplete and must not be deployed. If local work
-resumes, first confirm the stock service is healthy, then decide whether this
-single capture is worth completing in parallel with the upstream issue. Do not
-resume broad instrumentation or another scheduler workaround.
-
-## Service state at pause
+## Current service state
 
 ```text
-container: b70-vllm-qwen38
-image/kernel/scheduler: pinned stock versions above
-state: stopped intentionally; not classified as healthy
+container: b70-vllm-qwen38-latest
+endpoint: http://127.0.0.1:19623/v1
+vLLM/XPU-kernels: 46638857f / a397c58eb
+state: running with classifier-only source correction; focused gates pass
 MTP: 4 speculative tokens enabled
-available containment: post-tokenization one-token prompt guard (not a fix)
+prompt guard: disabled
 diagnostic mounts: none
 scheduler workaround: absent
-latest candidate: b70-vllm-qwen38-latest, stopped; XPU-kernels a397c58
+pinned container b70-vllm-qwen38: stopped
 ```

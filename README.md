@@ -4,11 +4,11 @@ This Intel Arc Pro B70 was quite painful to get rolling properly, so here is wha
 
 This repository documents the reproducible Qwen3.8-27B service for one 32 GiB B70: a transparent INT4 target, MTP4 speculative decoding, FP8 KV cache, automatic prefix caching, and a persisted 210 W efficiency cap.
 
-> **Paused root-cause investigation (updated 2026-08-26):** raw prompts fail with NaN logprobs exactly when `prompt_tokens % 64 == 5`. Trusted capture localizes the first non-finite boundary to layer-4 GDN `core_attn_out`; exact operands replay finitely. The latest published vLLM nightly and the full-config wheel from current XPU-kernels `main` reproduce the same 5/69/133 failure and exact 1–128 residue rule. The prompt guard remains documented containment, not a healthy or fixed service. Both inference containers are intentionally stopped. See the [authoritative handoff](docs/gdn-64n5-investigation-pause-2026-08-25.md) and [upstream issue #548](https://github.com/vllm-project/vllm-xpu-kernels/issues/548).
+> **Root cause found (2026-08-26):** vLLM's legacy GPU runner classified a batch as uniform decode from shape alone. With MTP4, a five-token prompt tail has the same shape as one speculative-decode step and was incorrectly dispatched through its FULL graph. Graph capture had filled reserved recurrent block 0 with NaNs, which the wrong path consumed. Adding the missing `has_prefill` condition fixes 5/69/133, all lengths 1--128, and the original 49,925-token case without prompt changes or an XPU-kernel patch. The repository contains the [validated temporary runtime patch](docker/patches/patch_uniform_decode_prefill.py); a vLLM maintainer is preparing the upstream PR and regression tests. See the [authoritative investigation](docs/gdn-64n5-investigation-pause-2026-08-25.md) and [upstream issue #548](https://github.com/vllm-project/vllm-xpu-kernels/issues/548).
 
 ## Result
 
-When deliberately started, the pinned service exposes `qwen38` through an OpenAI-compatible API at `http://127.0.0.1:19622/v1` and through OpenCode as `local-b70/qwen38`. It is currently stopped because its prompt guard only contains the known GDN failure.
+The validated latest-stack candidate exposes `qwen38` at `http://127.0.0.1:19623/v1`. The pinned `19622` service remains stopped until the source correction is promoted into its Compose definition.
 
 | Measurement at 210 W | Result |
 |---|---:|
