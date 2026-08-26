@@ -260,6 +260,42 @@ Although finite, it caused an immediate empty stop at the guarded chat length.
 The exact-output canary rejected that placement. It was never accepted as the
 final configuration.
 
+## Latest published stack test (2026-08-26)
+
+The first external contributor to issue #548 reported no reproduction on a
+newer stack and suggested the defect might have been silently fixed. We tested
+the newest published components available at the time, without the prompt
+guard:
+
+| Component | Tested value |
+|---|---|
+| vLLM nightly image | `vllm/vllm-openai-xpu:nightly@sha256:5f417989045f2e16379bbc6975410edb22d2c86f107577c3507a1359425e7eb1` |
+| vLLM | `0.26.1rc1.dev1219+g46638857f.xpu` |
+| XPU-kernels source | `a397c58eb7781e6fe0d6b3fb7c25d21b5f658784` (then-current `main`) |
+| XPU-kernels CI wheel | full-config `vllm_xpu_kernels-0.1.dev1+ga397c58eb-cp312-cp312-linux_x86_64.whl` |
+| XPU-kernels wheel SHA-256 | `99e0560ee1afea40f320feef8a809e131ae8a60565f76bc5455961a4227e4ddf` |
+| PyTorch | `2.13.0+xpu` |
+| Derived local image | `sha256:8ff7dc99d59fd056579bfa096efecf604f4e25a5a46acdb0842ac6c9bf2a63ec` |
+
+The wheel's development-version spelling differs from the contributor's
+`0.1.14.dev16+ga397c58`, but the source commit is exact and the tested artifact
+is upstream CI's full-config build.
+
+Results:
+
+- unguarded 4/5/6, 68/69/70 and 132/133/134 reproduced finite/NaN/finite;
+- unguarded 1--128 matched `T % 64 == 5` exactly, with no unexpected length;
+- the 1--128 JSONL is retained under Git-ignored
+  `.artifacts/latest-stack/gdn-tail-1-128.jsonl`, SHA-256
+  `07cbeea1f48900087dc46a5190dd5a7f5e153dd29f89e4571d597c5943e6f85d`.
+
+This disproves the proposed explanation that upgrading XPU-kernels alone has
+silently fixed the defect. Another B70 contributor independently reproduced it
+on the same revisions. Their still-unaudited Fable 5 analysis points to vLLM
+graph dispatch rather than kernel arithmetic; that is consistent with the live
+versus replay boundary, but remains a hypothesis rather than a validated root
+cause.
+
 ## Exact pause point
 
 The only unfinished focused experiment replaces five diagnostic ATen `copy_`
@@ -278,10 +314,10 @@ resume broad instrumentation or another scheduler workaround.
 ```text
 container: b70-vllm-qwen38
 image/kernel/scheduler: pinned stock versions above
-state: running, healthy
+state: stopped intentionally; not classified as healthy
 MTP: 4 speculative tokens enabled
-active containment: post-tokenization one-token prompt guard
+available containment: post-tokenization one-token prompt guard (not a fix)
 diagnostic mounts: none
 scheduler workaround: absent
-candidate XPU-kernel binary: absent
+latest candidate: b70-vllm-qwen38-latest, stopped; XPU-kernels a397c58
 ```

@@ -4,11 +4,11 @@ This Intel Arc Pro B70 was quite painful to get rolling properly, so here is wha
 
 This repository documents the reproducible Qwen3.8-27B service for one 32 GiB B70: a transparent INT4 target, MTP4 speculative decoding, FP8 KV cache, automatic prefix caching, and a persisted 210 W efficiency cap.
 
-> **Paused root-cause investigation (2026-08-25):** raw prompts fail with NaN logprobs exactly when `prompt_tokens % 64 == 5`. Trusted capture localizes the first non-finite boundary to layer-4 GDN `core_attn_out`; exact operands replay finitely, and known fixes #344/#411/#437/#439 are present. A contained prompt guard now inserts one space token inside the final chat turn—or appends it to a raw completion—only for the failing remainder. The exhaustive 1–128 oracle, exact 68/69/70 chat parity, and guarded tool flow pass with MTP4 retained. This is a bypass, not a kernel fix. See the [authoritative handoff](docs/gdn-64n5-investigation-pause-2026-08-25.md) and [upstream issue #548](https://github.com/vllm-project/vllm-xpu-kernels/issues/548).
+> **Paused root-cause investigation (updated 2026-08-26):** raw prompts fail with NaN logprobs exactly when `prompt_tokens % 64 == 5`. Trusted capture localizes the first non-finite boundary to layer-4 GDN `core_attn_out`; exact operands replay finitely. The latest published vLLM nightly and the full-config wheel from current XPU-kernels `main` reproduce the same 5/69/133 failure and exact 1–128 residue rule. The prompt guard remains documented containment, not a healthy or fixed service. Both inference containers are intentionally stopped. See the [authoritative handoff](docs/gdn-64n5-investigation-pause-2026-08-25.md) and [upstream issue #548](https://github.com/vllm-project/vllm-xpu-kernels/issues/548).
 
 ## Result
 
-The active service exposes `qwen38` through an OpenAI-compatible API at `http://127.0.0.1:19622/v1` and through OpenCode as `local-b70/qwen38`.
+When deliberately started, the pinned service exposes `qwen38` through an OpenAI-compatible API at `http://127.0.0.1:19622/v1` and through OpenCode as `local-b70/qwen38`. It is currently stopped because its prompt guard only contains the known GDN failure.
 
 | Measurement at 210 W | Result |
 |---|---:|
