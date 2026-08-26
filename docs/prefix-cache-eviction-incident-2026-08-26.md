@@ -136,6 +136,11 @@ This boundary is expected: the configured 196,608-token context minus the
 16,384-token output allowance is 180,224 tokens. The configured 10,000-token
 compaction reserve is smaller and therefore does not determine the boundary.
 
+The preceding ordinary assistant request reused 176,000 cached tokens. The
+automatic compaction request then processed 137,459 input tokens with zero
+cache read and took 443.031 seconds (7 minutes 23.031 seconds). This is direct
+local evidence of the latency cliff, not an estimate.
+
 OpenCode 1.18.4 already puts its compaction instruction after the selected
 conversation history. Prompt placement is not the cache failure. Its compaction
 request also does all of the following:
@@ -171,6 +176,45 @@ stability, summary correctness and the post-compaction continuation. A separate
 fast compaction model is the available configuration-level alternative, but it
 avoids rather than fixes B70 prefix reuse and may move private history to another
 provider.
+
+### Upstream status and safe shape
+
+The problem is already tracked upstream:
+
+- [issue #43249](https://github.com/anomalyco/opencode/issues/43249) identifies
+  the divergent compaction prefix and shared cache key;
+- [PR #42506](https://github.com/anomalyco/opencode/pull/42506) replays the
+  ordinary system, tools and typed history before appending the summary prompt;
+- the earlier [PR #25100](https://github.com/anomalyco/opencode/pull/25100)
+  measured an 84.9% compaction cache hit but was closed only by stale cleanup;
+- [PR #40800](https://github.com/anomalyco/opencode/pull/40800) explains why
+  current OpenCode serializes compaction history: sliced structured history can
+  expose orphaned tool calls to strict providers.
+
+PR #42506 has a successful Qwen/Ollama cache-hit report, but its current form
+changes the default for every provider and does not request `tool_choice: none`.
+The upstream-safe version should be opt-in, for example
+`compaction.preserve_prefix_cache: true`, while preserving the serialized path
+as the default and fallback. The first scope should be same-model,
+OpenAI-compatible requests with a clean turn-boundary split, no overflow
+recovery and no reordered prior-compaction history. It should retain the full
+tool definitions and send `tool_choice: none`.
+
+This restriction is deliberate. vLLM includes tool definitions in the prompt
+when `tool_choice` is `none` unless started with
+`--exclude-tools-when-tool-choice-none`; this deployment does not set that
+option. Thus tool calls can be disabled without changing the cached Qwen token
+prefix. Anthropic, Bedrock and Gemini lower `tool_choice: none` differently and
+must keep the existing serialized fallback until separately proven safe.
+
+An adversarial review by Claude Opus 5 agreed that exact prefix reuse is
+feasible, but rejected a universal default because it can reopen the orphaned
+tool-call and signed-reasoning/provider-ordering failures fixed by #40800. It
+also identified request-building duplication as a future cache-drift risk: the
+ordinary and compaction paths should share one prefix-assembly helper.
+
+No live inference request, service restart or local OpenCode replacement was
+performed during this upstream review.
 
 ## Focused reproduction plan
 
