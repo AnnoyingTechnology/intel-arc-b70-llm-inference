@@ -9,12 +9,14 @@ The persisted cap is 210 W. Decode is content- and MTP-acceptance-dependent, so 
 | ~512/128, five prompt families | 91.98 tok/s median | 1,243 tok/s / 0.383 s | 5 |
 | 8,156/128, five prompt families | 91.08 tok/s median | 1,566 tok/s / 5.207 s | 5 |
 | 512/512, sweep control | 83.77 tok/s median | n/a | 3 |
-| 32,565/8, cold | 72.50 tok/s | 1,300 tok/s / 25.045 s | 1 |
-| 99,889/16, cold | 40.77 tok/s | 851 tok/s / 117.346 s | 1 |
+| 32,565/8, cold, K64 attention | n/a | 1,325 tok/s / 24.580 s | 1 |
+| 99,889/16, cold, K64 attention | n/a | 896 tok/s / 111.457 s | 1 |
 
 The very short 512-token prefill cell is dominated by fixed HTTP/tokenizer/scheduler overhead and is not used as the headline prefill figure. The 32K and 100K decode cells have too few generated tokens for meaningful sustained decode conclusions.
 
 Power-cap sweep and prefix-cache results are documented separately in [`power-efficiency.md`](power-efficiency.md) and [`prefill-and-prefix-cache.md`](prefill-and-prefix-cache.md).
+
+The K64 attention promotion changes only the Xe2 head-256 workgroup tile. Its post-promotion gate matched all seven deterministic outputs and eight repeat hashes, and passed the 131-length finite-logprob sweep. Full measurements and the source patch are in [`xpu-head256-attention-tuning-2026-08-27.md`](xpu-head256-attention-tuning-2026-08-27.md).
 
 ## Original 275 W selected profile
 

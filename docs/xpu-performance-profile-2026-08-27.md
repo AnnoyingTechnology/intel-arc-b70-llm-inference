@@ -2,7 +2,7 @@
 
 ## Scope
 
-This profile answers one question: where could a 24-hour optimization effort improve Qwen3.8-27B with MTP4 on the B70?
+This profile answers one question: where can capability-preserving work improve Qwen3.8-27B with MTP4 on the B70? Weight, activation, KV-cache and output-head quantization changes are excluded.
 
 Runtime under test:
 
@@ -61,18 +61,24 @@ The server's cumulative MTP telemetry, including preceding warmups, reported mea
 
 The draft INT4 head reads about 656 MB of packed weights and scales per call, yielding about 596 GB/s of payload. The BF16 target head reads about 2.54 GB per call, yielding about 589 GB/s. Their matching streaming rates indicate bandwidth scaling, not a uniquely slow INT4 kernel. A replacement M=1 INT4 kernel has little room unless it reduces weight traffic.
 
-Quantizing only the target LM head is the clearest decode experiment. FP8/INT8 could at most remove roughly half of its measured 9.4% wall share; INT4 could at most remove roughly three quarters. Those are ceilings, not predictions. The target head determines verified logits, so any quantization requires the full quality gate. INT4 would also free about 1.9 GB of VRAM; FP8 would free about 1.27 GB.
+Reducing the target head's precision is the obvious way to lower that traffic, but it changes verified logits. It is explicitly excluded from the lossless work. A custom kernel that reads the same weights has little bandwidth headroom.
 
 An attempted no-XPU-graph decode profile was rejected as unfaithful: with graph disabled, this build allocated 31.63 GiB while constructing the base model and OOMed before loading completed, even at an 8K model limit and 1 GB KV reservation. No conclusions were drawn from it.
 
-## Ranked next work
+## Completed attention experiment
 
-1. **Long-prefill kernel work:** microbenchmark the exact Xe2 FlashAttention specialization and sweep Q/K tiles, subgroup layout, and pipeline stages. Gate changes at 8K, 32K, and 100K with bitwise-finite and quality checks.
-2. **Decode, low code risk:** A/B an FP8 target LM head, then INT4 only if FP8 leaves useful performance on the table. Run the existing capability/canary suite because this changes verified logits.
-3. **Decode instrumentation:** obtain graph-replay kernel visibility before changing main-model or MTP-body kernels. The present trace cannot rank graph-hidden candidates honestly.
-4. **Cheap existing fusion:** test vLLM's currently disabled Q/K RMSNorm + RoPE fusion. It is a configuration A/B, not a custom-kernel project, and its ceiling is much smaller than GEMM or long-context attention.
-5. **Do not prioritize:** another GDN rewrite, scratchpad-allocation cleanup without a measured CPU bottleneck, or a speculative M=1 INT4 rewrite.
+The exact head-256 attention specialization was benchmarked. Changing only the K tile from 32 to 64 improves isolated modeled attention by 1.05% at 8K, 6.36% at 32K and 9.57% at 100K. A controlled full-model 100K request improves from 115.19 to 111.46 seconds TTFT, or 3.24%, while prefill energy/token improves 3.25%. Exact reference tests pass. See [the tuning report](xpu-head256-attention-tuning-2026-08-27.md).
+
+Q128/K64 was slower than the retained Q256/K64 policy. Larger tiles were deferred because K64 already reaches the BMG register limit and spills about five registers.
+
+## Ranked remaining lossless work
+
+1. Turn the exact B70/head-256 result into a page-aware policy with a broader neighboring-shape test matrix.
+2. Port Qwen's model-specific gated split + Q/K RMSNorm + RoPE fusion to XPU. The generic compiler pass does not match the gated QKV layout; the stronger model path is CUDA-only.
+3. Obtain graph-replay kernel visibility before changing decode code. The visible target and draft heads are already bandwidth-saturated.
+4. Revisit oneDNN W4A16 only with a concrete pathological shape or an upstream Xe2 implementation improvement.
+5. Do not prioritize another GDN rewrite, unmeasured scratchpad cleanup, or a same-traffic decode kernel.
 
 ## 24-hour decision
 
-A focused 24-hour effort is justified, but the best custom-kernel target is the existing Xe2 FlashAttention policy for this exact head-256/GQA/FP8-KV shape, not GDN. The best immediate decode experiment is target-LM-head quantization, not a new arithmetic kernel. Expect single-digit total gains from either path; the profile provides no evidence for a credible 2× improvement.
+The first lossless kernel effort succeeded: the retained attention policy saves 3.73 seconds on the controlled 100K request. Decode offers no comparable lossless target because its visible heads already approach the card's memory-bandwidth ceiling. Further gains require a second measured integration target, not precision reduction.

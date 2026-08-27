@@ -60,39 +60,25 @@ Automatic tool selection is enabled server-side with vLLM's `qwen3_coder` parser
 
 Automatic prefix caching is enabled with SHA-256 keys and a 64-token prefix-match unit. Repeated conversations and tool-call follow-ups can reuse cached context inside the XPU hybrid cache's larger physical blocks; cold, unrelated prompts still pay normal prefill cost. Cache entries are in-memory and disappear when the service restarts.
 
-The 8,192-token scheduler budget is deliberately literal and divisible by 64.
-Do not reintroduce an environment override without repeating the GDN sweep.
-
-**Known issue:** the XPU GDN prefill path returns non-finite logits exactly when
-the scheduled prompt length has remainder five modulo its 64-token kernel
-chunk. A public raw-completion probe reproduces this at 5, 69 and 133 tokens;
-the original OpenCode failure was 49,925 tokens, also remainder five. A failed
-turn can leave bad reusable recurrent state. See
-[`repetition-incident.md`](repetition-incident.md) before trusting the service
-for unattended long agent sessions.
-
-Compose enables `B70_GDN_PROMPT_PADDING=1`. After rendering, the startup patch
-changes only prompts with length `64*N+5`: chat inserts one tokenizer-verified
-space before the final `<|im_end|>`, preserving the assistant-generation
-prefix; raw completions append the space. All preceding tokens, the cache salt,
-MTP4, FP8 KV and the scheduler remain unchanged. Validate it with:
+The 8,192-token scheduler budget is deliberate. The validated runner fix adds
+the scheduler's `has_prefill` state to uniform-decode graph classification.
+This prevents five-token prompt tails from being confused with MTP4 decode
+without changing prompt tokens, scheduler chunks, MTP or kernels. The earlier
+prompt-padding containment remains mounted for rollback analysis but
+`B70_GDN_PROMPT_PADDING=0` keeps it inactive. Validate the fix with:
 
 ```bash
-./scripts/gdn_tail_probe.py --lengths 1-128 --expect-tail-guard
+./scripts/gdn_tail_probe.py --lengths 1-128
 ```
 
-The accepted deployment passed 128/128 raw requests, exact `OK` parity at
-rendered chat lengths 68/69/70, and tool-call plus tool-result flows where both
-guarded prompts had remainder five. This is containment, not a kernel fix.
+The patch passed lengths 1–128 plus 133, 197 and 261 with finite logprobs. The
+unmodified runtime reproduces NaNs at 5, 69 and 133. See the root-cause record
+in [`gdn-64n5-investigation-pause-2026-08-25.md`](gdn-64n5-investigation-pause-2026-08-25.md).
 
-A namespace that processed the old failure may contain poisoned recurrent
-state. The service recreation that deployed the guard cleared all in-memory
-prefixes; otherwise rotate that session's private `cache_salt` once. A new salt
-alone cannot repair an unguarded cold request at the failing remainder.
-
-Rollback is to set `B70_GDN_PROMPT_PADDING: "0"`, recreate only `qwen38`, and
-expect the historical 5-token NaN oracle to return. Do not leave the guard off
-for normal use on the affected runtime.
+Do not remove `patch_uniform_decode_prefill.py` until the corresponding vLLM
+fix is present in the pinned source. The stopped
+`b70-vllm-qwen38-latest-stock-20260827` container retains this patch and is a
+functional stock-attention rollback.
 
 The rejected MTP-preserving scheduler experiment remains at
 [`patch_xpu_gdn_tail.py`](../docker/patches/patch_xpu_gdn_tail.py), but Compose
@@ -141,7 +127,7 @@ docker compose ps
 curl -fsS http://127.0.0.1:19622/health
 ```
 
-The persistent compile-cache volume is retained by `docker compose down`. Do not add `--volumes` unless deliberately discarding it.
+The external persistent compile-cache volume is retained by `docker compose down`. Do not remove `b70-latest-test_latest-vllm-cache` unless deliberately discarding it.
 
 ## Reboot behavior
 

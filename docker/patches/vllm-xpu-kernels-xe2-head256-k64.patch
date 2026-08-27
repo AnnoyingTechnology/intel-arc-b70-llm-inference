@@ -1,0 +1,12 @@
+diff --git a/csrc/xpu/attn/xe_2/fmha_utils.hpp b/csrc/xpu/attn/xe_2/fmha_utils.hpp
+--- a/csrc/xpu/attn/xe_2/fmha_utils.hpp
++++ b/csrc/xpu/attn/xe_2/fmha_utils.hpp
+@@ -82,6 +82,6 @@
+ struct chunk_policy_head256 {
+-  using ShapeQK = Shape<_256, _32, _32>;
+-  using ShapePV = Shape<_256, _32, _32>;
++  using ShapeQK = Shape<_256, _64, _32>;
++  using ShapePV = Shape<_256, _32, _64>;
+   using ShapeOut = Shape<_256, _256>;
+   using SubgroupLayoutQK = Layout<Shape<_32, _1, _1>>;
+ };

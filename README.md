@@ -15,8 +15,8 @@ The validated patched service exposes `qwen38` at the established `http://127.0.
 | Sustained decode, p512/g512 | **83.77 tok/s** median |
 | Diversified short decode, ~p512/g128 | **91.08 tok/s** median |
 | Cold prefill, 8,156 tokens | **1,566 tok/s**, 5.21 s TTFT |
-| Cold prefill, 32,565 tokens | **1,300 tok/s**, 25.05 s TTFT |
-| Cold prefill, 99,889 tokens | **851 tok/s**, 117.35 s TTFT |
+| Cold prefill, 32,565 tokens | **1,325 tok/s**, 24.58 s TTFT |
+| Cold prefill, 99,889 tokens | **896 tok/s**, 111.46 s TTFT |
 | Cached 32K repeated turn | **1.07 s TTFT** after 31,616 cached tokens |
 | 32K tool-result follow-up | **3.52 s total**, 29,952 cached tokens |
 
@@ -32,8 +32,9 @@ The 210 W cap is the measured cross-workload efficiency knee. Relative to 275 W,
 - FP8 KV with an explicit 8.5 GB reservation provides 209,523 tokens of cache capacity and a configured 196,608-token serving contract.
 - SHA-256 automatic prefix caching fixes repeated agent/tool ingestion. It reduced an identical 32K turn from 21.87 s cold to 2.62 s and then 1.07 s as the cache tail became reusable.
 - The scheduler remains at Intel's reference 8,192-token chunk. A measured 16,384-token A/B made 100K cold prefill 2.0% slower and consumed more energy.
+- A B70-tuned Xe2 head-256 attention policy doubles the K tile to 64. It improves isolated attention by 9.57% and whole-model TTFT by 3.24% at 100K without changing weights, precision, KV format or MTP.
 
-Cold long-context prefill remains the principal limitation. Qwen3.8-27B has 16 full-attention layers without a sliding window, and the current single-XPU path drops from about 1,566 tok/s at 8K to 851 tok/s at 100K. Prefix caching helps unchanged multi-turn history; it cannot make the first ingestion free.
+Cold long-context prefill remains the principal limitation. Qwen3.8-27B has 16 full-attention layers without a sliding window, and the current single-XPU path drops from about 1,566 tok/s at 8K to 896 tok/s at 100K. Prefix caching helps unchanged multi-turn history; it cannot make the first ingestion free.
 
 ## Quick operations
 
@@ -74,6 +75,7 @@ The planned Huihui abliterated candidate must match the base model's quality and
 - [Power efficiency](docs/power-efficiency.md): sweep, selection, persistence and rollback.
 - [Prefill and prefix caching](docs/prefill-and-prefix-cache.md): TTFT scaling, tool-flow result and remaining bottleneck.
 - [XPU performance profile](docs/xpu-performance-profile-2026-08-27.md): measured decode/prefill kernel attribution and ranked 24-hour optimization targets.
+- [Xe2 head-256 attention tuning](docs/xpu-head256-attention-tuning-2026-08-27.md): lossless K64 policy, exact benchmarks, correctness gates, build pitfalls and reproducible patch.
 - [Long-session prefix-cache eviction](docs/prefix-cache-eviction-incident-2026-08-26.md): observed full miss, hybrid-cache mechanism and focused reproduction plan.
 - [Architecture](docs/architecture.md): exact engine, overlay, versions and hashes.
 - [Operations](docs/operations.md): lifecycle, requests, validation and rollback.
