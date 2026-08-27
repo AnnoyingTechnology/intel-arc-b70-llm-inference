@@ -87,10 +87,19 @@ See [the single-user tuning report](xpu-single-user-tuning-2026-08-27.md).
 
 ## Ranked remaining lossless work
 
-1. Turn the exact B70/head-256 result into a page-aware policy with a broader neighboring-shape test matrix.
-2. Obtain graph-replay kernel visibility before changing decode code. The visible target and draft heads are already bandwidth-saturated.
-3. Revisit oneDNN W4A16 only with a concrete pathological shape or an upstream Xe2 implementation improvement.
-4. Do not prioritize the rejected Qwen fusion, another GDN rewrite, unmeasured scratchpad cleanup, or a same-traffic decode kernel.
+Active work is ordered by expected end-to-end gain divided by implementation
+cost. Promotion requires at least 3%; smaller effects are recorded and dropped.
+
+1. Improve the uncalibrated draft-only INT4 rounding/clipping at the same byte
+   footprint; acceptance from 3.45 to 3.8 would raise the decode roof about 10%.
+2. Test a newer oneDNN only if the pinned build lacks a relevant Xe2 W4A16 fix.
+3. Turn the exact B70/head-256 result into a page-aware policy with a broader
+   neighboring-shape test matrix.
+4. Obtain graph-replay visibility only before a decode change with at least 3%
+   recoverable wall time.
+
+Full method and stop conditions:
+[active optimization roadmap](active-optimization-roadmap-2026-08-27.md).
 
 ## 24-hour decision
 

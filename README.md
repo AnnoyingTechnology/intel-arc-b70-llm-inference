@@ -73,6 +73,7 @@ The planned Huihui abliterated candidate must match the base model's quality and
 
 ## Documentation
 
+- [Active optimization roadmap](docs/active-optimization-roadmap-2026-08-27.md): roofline position, ≥3% promotion threshold and current execution order.
 - [Power efficiency](docs/power-efficiency.md): sweep, selection, persistence and rollback.
 - [Prefill and prefix caching](docs/prefill-and-prefix-cache.md): TTFT scaling, tool-flow result and remaining bottleneck.
 - [XPU performance profile](docs/xpu-performance-profile-2026-08-27.md): measured decode/prefill kernel attribution and ranked 24-hour optimization targets.
