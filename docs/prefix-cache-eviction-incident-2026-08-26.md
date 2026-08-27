@@ -6,6 +6,10 @@ Investigation required. Do not treat automatic prefix caching as protection for
 an important long-running session. This incident is independent of the fixed
 GDN `64*N+5` dispatch bug.
 
+The separate overnight miss observed on 2026-08-27 is conclusively explained
+below by OpenCode's date-dependent system prompt. The original side-session
+capacity incident remains a separate investigation.
+
 No request, restart or configuration change was made while documenting the
 incident. Only existing OpenCode accounting, vLLM metrics, logs, configuration
 and installed source were read.
@@ -57,6 +61,35 @@ The cumulative metrics showed a high global prefix hit rate, which does not
 contradict this incident: aggregate hits conceal one expensive full miss.
 `num_preemptions_total=2` was also present, but it has not been attributed to
 these requests.
+
+## Overnight prefix invalidation — 2026-08-27
+
+The long session was left idle on 2026-08-26 and resumed after midnight. Its
+first request on 2026-08-27 incurred another long cold prefill despite no known
+intervening inference traffic. The vLLM container had remained continuously
+running since `2026-08-26T08:29:45Z`, with restart count `0`, status `running`
+and no OOM. This event is therefore not explained by a server restart or a
+time-based cache expiry.
+
+The installed OpenCode source reveals a deterministic prefix change. Every
+ordinary request rebuilds its leading environment system message with:
+
+```text
+Today's date: ${new Date().toDateString()}
+```
+
+The date changed at local midnight from Wednesday August 26 to Thursday August
+27. Because this text precedes the conversation, vLLM can match at most the
+unchanged cache blocks before the date token; it cannot reuse the long history
+after it. The cached blocks may still exist physically. This is cache-key
+invalidation caused by a volatile early prompt field, not evidence that an idle
+cache entry was evicted.
+
+The corrective design is to make the environment date stable for the lifetime
+of a session, or to make this volatile field optional for cache-sensitive local
+providers. Moving it later would preserve more of the static system prefix but
+would still invalidate any history after it. No live service or OpenCode process
+was changed while establishing this cause.
 
 ## Source-backed mechanism
 
