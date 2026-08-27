@@ -11,6 +11,7 @@ import statistics
 import threading
 import time
 import urllib.request
+import urllib.parse
 import uuid
 from pathlib import Path
 from typing import Any
@@ -19,12 +20,71 @@ from typing import Any
 PCI_DEVICE = "/sys/bus/pci/devices/0000:03:00.0"
 DEFAULT_URL = "http://127.0.0.1:19622/v1/chat/completions"
 
+SPEC_COUNTERS = {
+    "vllm:spec_decode_num_drafts_total": "mtp_drafts",
+    "vllm:spec_decode_num_draft_tokens_total": "mtp_draft_tokens",
+    "vllm:spec_decode_num_accepted_tokens_total": "mtp_accepted_tokens",
+}
+
 
 def read_int(path: str) -> int | None:
     try:
         return int(Path(path).read_text(encoding="ascii").strip())
     except (OSError, TypeError, UnicodeDecodeError, ValueError):
         return None
+
+
+def metrics_url(request_url: str) -> str:
+    parsed = urllib.parse.urlsplit(request_url)
+    return urllib.parse.urlunsplit(
+        (parsed.scheme, parsed.netloc, "/metrics", "", "")
+    )
+
+
+def read_spec_counters(url: str, timeout_s: float) -> dict[str, float]:
+    """Read aggregate speculative-decoding counters from vLLM metrics."""
+    try:
+        with urllib.request.urlopen(url, timeout=timeout_s) as response:
+            text = response.read().decode("utf-8")
+    except OSError:
+        return {}
+
+    counters: dict[str, float] = {}
+    for line in text.splitlines():
+        if not line or line.startswith("#"):
+            continue
+        metric = line.split("{", 1)[0].split(None, 1)[0]
+        output_name = SPEC_COUNTERS.get(metric)
+        if output_name is None:
+            continue
+        try:
+            counters[output_name] = float(line.rsplit(None, 1)[1])
+        except (IndexError, ValueError):
+            continue
+    return counters
+
+
+def spec_counter_delta(
+    before: dict[str, float], after: dict[str, float]
+) -> dict[str, float | None]:
+    values: dict[str, float | None] = {}
+    for name in SPEC_COUNTERS.values():
+        start = before.get(name)
+        end = after.get(name)
+        values[name] = None if start is None or end is None else end - start
+
+    drafts = values["mtp_drafts"]
+    draft_tokens = values["mtp_draft_tokens"]
+    accepted = values["mtp_accepted_tokens"]
+    values["mtp_acceptance_rate"] = (
+        None
+        if not draft_tokens or accepted is None
+        else accepted / draft_tokens
+    )
+    values["mtp_mean_acceptance_length"] = (
+        None if not drafts or accepted is None else 1.0 + accepted / drafts
+    )
+    return values
 
 
 def locate_hwmon() -> Path:
@@ -322,6 +382,7 @@ def main() -> None:
         parser.error("--content-chars must be at least 1")
 
     records: list[dict[str, Any]] = []
+    spec_metrics_url = metrics_url(args.url)
     run_marker = (
         f"POWERRUN-{uuid.uuid4().hex} " if args.isolate_run else None
     )
@@ -337,6 +398,7 @@ def main() -> None:
             args.content_multiplier,
             args.content_chars,
         )
+        spec_before = read_spec_counters(spec_metrics_url, args.timeout)
         record = run_request(
             args.url,
             args.model,
@@ -344,7 +406,9 @@ def main() -> None:
             args.output_tokens,
             args.timeout,
         )
+        spec_after = read_spec_counters(spec_metrics_url, args.timeout)
         record.update(metadata)
+        record.update(spec_counter_delta(spec_before, spec_after))
         record["repeat"] = repeat + 1
         records.append(record)
         print(json.dumps(record, sort_keys=True), flush=True)
@@ -376,6 +440,12 @@ def main() -> None:
         ),
         "decode_j_per_output_token_median": median_or_none(
             [record["decode_j_per_output_token"] for record in records]
+        ),
+        "mtp_acceptance_rate_median": median_or_none(
+            [record["mtp_acceptance_rate"] for record in records]
+        ),
+        "mtp_mean_acceptance_length_median": median_or_none(
+            [record["mtp_mean_acceptance_length"] for record in records]
         ),
         "max_temperature_c": max(
             record["telemetry"]["max_temperature_c"] for record in records

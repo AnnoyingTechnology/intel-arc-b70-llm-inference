@@ -46,6 +46,14 @@ speculative sampler still require explicit gates.
 
 Stop when no candidate projects at least 3% end-to-end gain.
 
+Result: stopped. Replacing max-absolute G128 scales with three-step
+least-squares refinement changed median MTP acceptance length from 3.4545 to
+3.4629, but decode fell from 85.81 to 85.52 tok/s (-0.34%) and energy rose from
+2.433 to 2.442 J/token. The candidate was removed and the max-absolute service
+restored. The exact six-prompt runs are retained outside Git as
+`.artifacts/draft-calibration-{baseline,mse}-diverse.json`. Activation-aware
+calibration is not justified by this sub-percent movement.
+
 ### 2. Contained oneDNN W4A16 update
 
 Check the pinned oneDNN revision against current Xe2 INT4/BF16 fixes. If a
@@ -55,6 +63,13 @@ time, so a 5% kernel improvement can clear the 3% service threshold at 8K.
 
 Do not replace oneDNN without a measured pathological shape or a relevant
 upstream correction.
+
+Result: no build. The W4A16 operator comes from `vllm-xpu-kernels`, whose
+runtime reports oneDNN 3.13.0 at
+`0e2a5bfeef1bfbffc3137464606540233086ce9b`; PyTorch's separate bundled oneDNN
+is 3.12.0 at `80afa71049cd69a3df32adcccb623b12cd7baa22`. The available 3.13.1/3.13.2
+patches contain no Xe2 INT4/BF16 correction applicable to the traced W4A16
+shapes. A library rebuild has no >=3% projection and is therefore skipped.
 
 ### 3. Xe2 attention dispatch
 

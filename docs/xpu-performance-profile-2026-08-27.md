@@ -98,6 +98,14 @@ cost. Promotion requires at least 3%; smaller effects are recorded and dropped.
 4. Obtain graph-replay visibility only before a decode change with at least 3%
    recoverable wall time.
 
+The first two items have now been screened. Weight-only least-squares draft
+calibration regressed decode by 0.34%, and the active W4A16 extension already
+uses oneDNN 3.13.0 with no relevant Xe2 INT4/BF16 fix in the 3.13.1/3.13.2
+patches. Neither path is being pursued further under the 3% rule. Attention is
+already optimized for this service's exact head-256/page-1664 shape; broadening
+its dispatch policy is upstream hardening, not another local performance gain.
+The active local target is therefore graph-replay decode attribution.
+
 Full method and stop conditions:
 [active optimization roadmap](active-optimization-roadmap-2026-08-27.md).
 
