@@ -73,6 +73,7 @@ The planned Huihui abliterated candidate must match the base model's quality and
 
 - [Power efficiency](docs/power-efficiency.md): sweep, selection, persistence and rollback.
 - [Prefill and prefix caching](docs/prefill-and-prefix-cache.md): TTFT scaling, tool-flow result and remaining bottleneck.
+- [XPU performance profile](docs/xpu-performance-profile-2026-08-27.md): measured decode/prefill kernel attribution and ranked 24-hour optimization targets.
 - [Long-session prefix-cache eviction](docs/prefix-cache-eviction-incident-2026-08-26.md): observed full miss, hybrid-cache mechanism and focused reproduction plan.
 - [Architecture](docs/architecture.md): exact engine, overlay, versions and hashes.
 - [Operations](docs/operations.md): lifecycle, requests, validation and rollback.
