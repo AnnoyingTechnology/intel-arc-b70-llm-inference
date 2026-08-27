@@ -60,6 +60,13 @@ Automatic tool selection is enabled server-side with vLLM's `qwen3_coder` parser
 
 Automatic prefix caching is enabled with SHA-256 keys and a 64-token prefix-match unit. Repeated conversations and tool-call follow-ups can reuse cached context inside the XPU hybrid cache's larger physical blocks; cold, unrelated prompts still pay normal prefill cost. Cache entries are in-memory and disappear when the service restarts.
 
+`--max-num-seqs 1 --performance-mode interactivity` is deliberate for this
+single-user service. It captures exact graph sizes 1–10, so MTP4's five-token
+verification step is not padded to eight. The measured gain is 1.19% at
+p476/g512 with unchanged output hashes. Removing `interactivity` restores
+vLLM's balanced graph sizes and loses that gain; it is not required for
+correctness.
+
 The 8,192-token scheduler budget is deliberate. The validated runner fix adds
 the scheduler's `has_prefill` state to uniform-decode graph classification.
 This prevents five-token prompt tails from being confused with MTP4 decode

@@ -8,7 +8,7 @@ The persisted cap is 210 W. Decode is content- and MTP-acceptance-dependent, so 
 |---:|---:|---:|---:|
 | ~512/128, five prompt families | 91.98 tok/s median | 1,243 tok/s / 0.383 s | 5 |
 | 8,156/128, five prompt families | 91.08 tok/s median | 1,566 tok/s / 5.207 s | 5 |
-| 512/512, sweep control | 83.77 tok/s median | n/a | 3 |
+| 476/512, single-user exact-graph profile | 85.61 tok/s median | n/a | 6 |
 | 32,565/8, cold, K64 attention | n/a | 1,325 tok/s / 24.580 s | 1 |
 | 99,889/16, cold, K64 attention | n/a | 896 tok/s / 111.457 s | 1 |
 
@@ -17,6 +17,14 @@ The very short 512-token prefill cell is dominated by fixed HTTP/tokenizer/sched
 Power-cap sweep and prefix-cache results are documented separately in [`power-efficiency.md`](power-efficiency.md) and [`prefill-and-prefix-cache.md`](prefill-and-prefix-cache.md).
 
 The K64 attention promotion changes only the Xe2 head-256 workgroup tile. Its post-promotion gate matched all seven deterministic outputs and eight repeat hashes, and passed the 131-length finite-logprob sweep. Full measurements and the source patch are in [`xpu-head256-attention-tuning-2026-08-27.md`](xpu-head256-attention-tuning-2026-08-27.md).
+
+The single-user profile uses vLLM's built-in `interactivity` mode so MTP4's
+five-token verifier uses an exact graph rather than an eight-row padded graph.
+It improves the controlled 512-token decode median by 1.19% and reduces decode
+energy/token by 0.92%; 32K prefill is unchanged within 0.5% noise. It passed
+7/7 canaries, 8/8 repeat stability, exact baseline hashes and the 131-length
+finite-logprob sweep. See
+[`xpu-single-user-tuning-2026-08-27.md`](xpu-single-user-tuning-2026-08-27.md).
 
 ## Original 275 W selected profile
 

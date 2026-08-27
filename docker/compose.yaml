@@ -72,6 +72,7 @@ services:
         --kv-cache-memory 8500000000
         --kv-cache-dtype fp8
         --max-num-seqs 1
+        --performance-mode interactivity
         --max-num-batched-tokens 8192
         --enable-prefix-caching
         --prefix-caching-hash-algo sha256

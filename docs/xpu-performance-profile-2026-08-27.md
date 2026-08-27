@@ -12,7 +12,7 @@ Runtime under test:
 - FP8 KV cache, 8,192-token scheduler chunk, MTP4, XPU graph
 - persisted 210 W card cap
 
-The production container was idle before capture, stopped for profiling, and restored healthy on port 19622 afterward. Stopping it necessarily cleared its in-memory prefix cache.
+The service was idle before capture, stopped for profiling, and restored healthy on port 19622 afterward. Stopping it necessarily cleared its in-memory prefix cache.
 
 ## Captures
 
@@ -71,14 +71,27 @@ The exact head-256 attention specialization was benchmarked. Changing only the K
 
 Q128/K64 was slower than the retained Q256/K64 policy. Larger tiles were deferred because K64 already reaches the BMG register limit and spills about five registers.
 
+## Completed single-user experiments
+
+The service accepts one active sequence, so vLLM's built-in `interactivity`
+mode is retained. It captures graph sizes 1–10 instead of the default
+`[1, 2, 4, 8]`; MTP4 verification therefore uses an exact five-token graph
+instead of padding to eight. A controlled six-run p476/g512 A/B improves median
+decode from 84.60 to 85.61 tok/s (+1.19%) and lowers decode energy from 2.471 to
+2.449 J/token (-0.92%). Cold 32K prefill remains unchanged within 0.5% noise.
+
+The CUDA-gated Qwen fused projection + Q/K norm + RoPE kernel was also enabled
+and validated on XPU. It reduced the isolated operation by 78–84%, but full
+serving showed no 32K prefill gain and a 0.98% decode regression. It was removed.
+See [the single-user tuning report](xpu-single-user-tuning-2026-08-27.md).
+
 ## Ranked remaining lossless work
 
 1. Turn the exact B70/head-256 result into a page-aware policy with a broader neighboring-shape test matrix.
-2. Port Qwen's model-specific gated split + Q/K RMSNorm + RoPE fusion to XPU. The generic compiler pass does not match the gated QKV layout; the stronger model path is CUDA-only.
-3. Obtain graph-replay kernel visibility before changing decode code. The visible target and draft heads are already bandwidth-saturated.
-4. Revisit oneDNN W4A16 only with a concrete pathological shape or an upstream Xe2 implementation improvement.
-5. Do not prioritize another GDN rewrite, unmeasured scratchpad cleanup, or a same-traffic decode kernel.
+2. Obtain graph-replay kernel visibility before changing decode code. The visible target and draft heads are already bandwidth-saturated.
+3. Revisit oneDNN W4A16 only with a concrete pathological shape or an upstream Xe2 implementation improvement.
+4. Do not prioritize the rejected Qwen fusion, another GDN rewrite, unmeasured scratchpad cleanup, or a same-traffic decode kernel.
 
 ## 24-hour decision
 
-The first lossless kernel effort succeeded: the retained attention policy saves 3.73 seconds on the controlled 100K request. Decode offers no comparable lossless target because its visible heads already approach the card's memory-bandwidth ceiling. Further gains require a second measured integration target, not precision reduction.
+The first lossless kernel effort succeeded: the retained attention policy saves 3.73 seconds on the controlled 100K request. Exact graph sizing adds 1.19% decode throughput for this single-user MTP4 service. Decode offers no larger demonstrated lossless target because its visible heads already approach the card's memory-bandwidth ceiling. Further gains require a second measured integration target, not precision reduction.

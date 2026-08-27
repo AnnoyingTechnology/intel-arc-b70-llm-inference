@@ -17,6 +17,8 @@
 - PyTorch: `2.13.0+xpu`.
 - `vllm-xpu-kernels` source: `a397c58eb7781e6fe0d6b3fb7c25d21b5f658784`, with the local head-256 Q256/K64 attention policy.
 - XPU graphs enabled; one request sequence; MTP with four speculative tokens.
+- `interactivity` performance mode captures exact graph sizes 1–10. This avoids
+  padding MTP4's five-token verifier to the balanced profile's eight-row graph.
 - FP8 KV cache with an explicit 8,500,000,000-byte reservation.
 - Maximum model length: 196,608 tokens.
 - SHA-256 automatic prefix caching enabled for multi-round agent and tool-call workloads, with a 64-token match unit inside the XPU hybrid cache's larger physical blocks. The power sweep retained cold/fixed controls so historical numbers remain comparable.
