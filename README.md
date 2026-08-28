@@ -147,6 +147,16 @@ systemctl status b70-power-limit.service
 cat /sys/bus/pci/devices/0000:03:00.0/hwmon/hwmon*/power1_cap
 ```
 
+Xe/Battlemage telemetry caveat: after the final inference on 2026-08-28, the
+B70 was genuinely idle at roughly 6–12 W and 0% engine use, but its package
+and PCIe readings remained frozen at 65/66 °C before jumping to 26/28 °C. The
+stock fan took 13m19s to stop. This matches the upstream
+[B70 stale-package-temperature report and forcewake RFC](https://lkml.iu.edu/2608.2/11582.html),
+which postdates the installed kernel. Treat a flat package temperature as
+potentially stale rather than evidence of hidden inference; the firmware fan
+cooldown is real, while the RFC fixes reporting and is not yet proven to
+shorten that cooldown.
+
 Stop only the inference service:
 
 ```bash
