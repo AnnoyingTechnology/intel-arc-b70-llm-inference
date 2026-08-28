@@ -12,10 +12,10 @@
 
 - Compose definition: `/home/julien/Documents/B70/docker/compose.yaml`.
 - Container: `b70-vllm-qwen38-latest`.
-- Image: local derivative `b70-vllm-latest-xpu:a397c58-head256-k64`, ID `sha256:dbe76bb9ba1a55c5ab163f0e1ee961f29d0bc5bd2706f542083c158d8b4c53c5`, based on `sha256:8ff7dc99d59fd056579bfa096efecf604f4e25a5a46acdb0842ac6c9bf2a63ec`.
+- Image: local derivative `b70-vllm-latest-xpu:a397c58-head256-k64-prefill64`, ID `sha256:547811943b8b78a48a17ca17e1a16e8927ae98e982e444640f7e4035b02d7d68`, based on `sha256:dbe76bb9ba1a55c5ab163f0e1ee961f29d0bc5bd2706f542083c158d8b4c53c5`.
 - vLLM source: `46638857fdbb30e0c232c9e8f9cb1ff6d6f545c3`.
 - PyTorch: `2.13.0+xpu`.
-- `vllm-xpu-kernels` source: `a397c58eb7781e6fe0d6b3fb7c25d21b5f658784`, with the local head-256 Q256/K64 attention policy.
+- `vllm-xpu-kernels` source: `a397c58eb7781e6fe0d6b3fb7c25d21b5f658784`, with the local head-256 Q256/K64 attention policy and the contained oneDNN W4A16 prefill selector.
 - XPU graphs enabled; one request sequence; MTP with four speculative tokens.
 - `interactivity` performance mode captures exact graph sizes 1–10. This avoids
   padding MTP4's five-token verifier to the balanced profile's eight-row graph.
@@ -61,7 +61,7 @@ Applied in this order from `/home/julien/Documents/B70/docker/patches`:
 6. `patch_gdn_prompt_padding.py` — `0188d68fdad6ebbf8946bd330617c07d1348c21c789b1fa37bce8a0ec6a01eff`.
 7. `patch_uniform_decode_prefill.py` — `1c9d3db9ef1a9abfdd00dd488bc45bda692174589ed62c94ad95f0b6eccec951`.
 
-The fifth patch normalizes OpenCode's visible `off` reasoning variant to vLLM's `none`. The sixth remains mounted but is disabled. The seventh fixes vLLM's legacy graph classifier by forbidding uniform-decode dispatch whenever scheduler state identifies prefill; it replaces the earlier prompt-padding containment without changing prompts. The local image replaces only the two Xe2 FlashAttention shared objects with the validated Q256/K64 build. Revalidate every runtime patch and rebuild the attention library before changing either source revision.
+The fifth patch normalizes OpenCode's visible `off` reasoning variant to vLLM's `none`. The sixth remains mounted but is disabled. The seventh fixes vLLM's legacy graph classifier by forbidding uniform-decode dispatch whenever scheduler state identifies prefill; it replaces the earlier prompt-padding containment without changing prompts. The local image contains the validated Q256/K64 Xe2 attention pair plus the matched `_xpu_C` and GDN companion carrying the contained W4A16 prefill selector. Revalidate every runtime patch and rebuild both kernel pairs before changing either source revision.
 
 ## Network and lifecycle
 

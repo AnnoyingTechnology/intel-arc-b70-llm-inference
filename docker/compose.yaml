@@ -2,7 +2,7 @@ name: b70-vllm
 
 services:
   qwen38:
-    image: b70-vllm-latest-xpu:a397c58-head256-k64
+    image: b70-vllm-latest-xpu:a397c58-head256-k64-prefill64
     pull_policy: never
     container_name: b70-vllm-qwen38-latest
     restart: "no"

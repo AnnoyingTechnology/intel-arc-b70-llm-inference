@@ -1,10 +1,20 @@
 # Intel Arc Pro B70 local inference
 
-This Intel Arc Pro B70 was quite painful to get rolling properly, so here is what GPT-5.6-sol brute-forced with me. A vanilla LM Studio/llama.cpp Vulkan setup produced a measly ~10 tok/s even with MTP; the final quality-gated vLLM/XPU configuration reaches 80–119 tok/s depending on workload.
+This repository records the quality-gated optimization of Qwen3.8-27B for one
+32 GiB Intel Arc Pro B70. The controlled llama.cpp/Vulkan baseline produced
+12.02 tok/s, and the fastest same-GGUF SYCL control reached 29.93 tok/s. The
+quality-gated vLLM/XPU service now sustains 85.61 tok/s on a long decode cell
+and reached 118.60 tok/s on a favorable short-output cell: **7.1x the
+controlled Vulkan baseline in sustained use and up to 9.9x on the standardized
+short cell**.
 
-This repository documents the reproducible Qwen3.8-27B service for one 32 GiB B70: a transparent INT4 target, MTP4 speculative decoding, FP8 KV cache, automatic prefix caching, and a persisted 210 W efficiency cap.
-
-> **Root cause found (2026-08-26):** vLLM's legacy GPU runner classified a batch as uniform decode from shape alone. With MTP4, a five-token prompt tail has the same shape as one speculative-decode step and was incorrectly dispatched through its FULL graph. Graph capture had filled reserved recurrent block 0 with NaNs, which the wrong path consumed. Adding the missing `has_prefill` condition fixes 5/69/133, all lengths 1--128, and the original 49,925-token case without prompt changes or an XPU-kernel patch. The repository contains the [validated temporary runtime patch](docker/patches/patch_uniform_decode_prefill.py); a vLLM maintainer is preparing the upstream PR and regression tests. See the [authoritative investigation](docs/gdn-64n5-investigation-pause-2026-08-25.md) and [upstream issue #548](https://github.com/vllm-project/vllm-xpu-kernels/issues/548).
+This was not a one-flag speedup. It required selecting the viable backend and
+weight path, constructing a same-base speculative sidecar, quantizing only the
+draft, sizing the KV cache for the full context contract, profiling exact XPU
+shapes, tuning attention and W4A16 dispatch, and rejecting changes that failed
+end-to-end, energy or correctness gates. The reproducible result uses a
+transparent INT4 target, MTP4, FP8 KV, automatic prefix caching and a persisted
+210 W efficiency cap.
 
 ## Result
 
@@ -13,10 +23,10 @@ The validated patched service exposes `qwen38` at the established `http://127.0.
 | Measurement at 210 W | Result |
 |---|---:|
 | Sustained decode, p476/g512 | **85.61 tok/s** median |
-| Diversified short decode, ~p512/g128 | **91.08 tok/s** median |
-| Cold prefill, 8,156 tokens | **1,566 tok/s**, 5.21 s TTFT |
-| Cold prefill, 32,565 tokens | **1,325 tok/s**, 24.58 s TTFT |
-| Cold prefill, 99,889 tokens | **896 tok/s**, 111.46 s TTFT |
+| Diversified short decode, ~p512/g128 | **91.98 tok/s** median |
+| Cold prefill, 8,190 tokens | **1,665 tok/s**, 4.919 s TTFT |
+| Cold prefill, 32,563 tokens | **1,418 tok/s**, 22.963 s TTFT |
+| Cold prefill, 99,889 tokens, before the final W4A16 selector | **896 tok/s**, 111.46 s TTFT |
 | Cached 32K repeated turn | **1.07 s TTFT** after 31,616 cached tokens |
 | 32K tool-result follow-up | **3.52 s total**, 29,952 cached tokens |
 
@@ -24,18 +34,101 @@ The earlier 275 W profile reached 118.60 tok/s on a favorable 128-token forced-o
 
 The 210 W cap is the measured cross-workload efficiency knee. Relative to 275 W, it retains 98.6% of sustained decode rate while reducing decode energy by 11.6% per output token. Cold 8K prefill retains 82.5% of throughput while improving energy by 6.1% per input token; going below 210 W makes cold prefill less efficient as well as slower. In normal local-agent use, the card has been observed around 65 °C with only faint, unobtrusive noise, unlike full-TDP operation.
 
-## What made it fast
+## Bandwidth reference and remaining headroom
 
-- Frozenlock Qwen3.8-27B AutoRound INT4 weights are served through Intel's XPU GPTQ W4A16 path; no opaque replacement quantization was accepted.
-- A same-base BF16 MTP sidecar supplies speculative decoding. Only the draft LM head and five draft linears are converted to symmetric INT4 G128 at startup; the unchanged target verifies every emitted token.
-- MTP4 raises short-output decode well above the GGUF paths measured on this host: 12.0 tok/s with Vulkan, 29.9 tok/s with SYCL/MTP2, and 80–119 tok/s depending on the selected vLLM workload.
-- FP8 KV with an explicit 8.5 GB reservation provides 209,523 tokens of cache capacity and a configured 196,608-token serving contract.
-- SHA-256 automatic prefix caching fixes repeated agent/tool ingestion. It reduced an identical 32K turn from 21.87 s cold to 2.62 s and then 1.07 s as the cache tail became reusable.
-- The scheduler remains at Intel's reference 8,192-token chunk. A measured 16,384-token A/B made 100K cold prefill 2.0% slower and consumed more energy.
-- A B70-tuned Xe2 head-256 attention policy doubles the K tile to 64. It improves isolated attention by 9.57% and whole-model TTFT by 3.24% at 100K without changing weights, precision, KV format or MTP.
-- Single-user `interactivity` mode captures an exact five-token MTP4 graph instead of padding it to eight, improving sustained decode by 1.19% without changing model arithmetic.
+At the measured 3.4–3.5 mean acceptance length, one MTP4 cycle streams about
+15.23 GB of target weights plus four approximately 0.87 GB draft passes. That
+places the sustained cell's absolute weight-only roof near 112 tok/s; 85.61
+tok/s is about 76% of that deliberately unattainable upper bound. After
+allowing for unavoidable recurrent state, activations and dispatch costs, the
+service is estimated to operate at **82–90% of its practical bandwidth-limited
+decode ceiling**. As a second reference, the visible draft and target output
+heads stream 589–596 GB/s against the B70's nominal 608 GB/s, or 97–98%.
 
-Cold long-context prefill remains the principal limitation. Qwen3.8-27B has 16 full-attention layers without a sliding window, and the current single-XPU path drops from about 1,566 tok/s at 8K to 896 tok/s at 100K. Prefix caching helps unchanged multi-turn history; it cannot make the first ingestion free.
+These are roofline estimates, not a claim that every graph-hidden kernel has
+been proved optimal. They do show why another lossless 2x decode improvement is
+not credible without first finding a new source of recoverable traffic or
+graph overhead.
+
+## Optimization ladder
+
+| Accepted decision | Measured contribution | Integrity boundary |
+|---|---:|---|
+| Vulkan/GGUF to the best same-GGUF SYCL/MTP2 path | 12.02 → 29.93 tok/s, **2.49x** | Same GGUF target; backend and MTP changed together |
+| GGUF/SYCL to vLLM XPU GPTQ W4A16 with BF16 MTP4 draft | 29.93 → 82.98 tok/s, **2.77x** | System-path comparison, not a single-variable A/B |
+| Symmetric INT4 G128 for only the draft LM head and five draft linears | 82.98 → 118.83 tok/s, **+43.2%** on p512/g128 | Unchanged target verifies every emitted token |
+| SHA-256 automatic prefix caching | 32K TTFT 21.87 → 2.62 → 1.07 s, **up to -95.1%** | Reuses only identical prefix blocks |
+| Xe2 head-256 Q256/K64 attention policy | 100K TTFT 115.19 → 111.46 s, **-3.24%** | Weights, logits, precision, KV and MTP unchanged |
+| Exact five-row single-user MTP graph | 84.60 → 85.61 tok/s, **+1.19%** | Removes graph padding only |
+| Contained oneDNN W4A16 32x64 selector for four exact prefill projections | 8K TTFT **-5.68%**; 32K **-6.73%** | Six production-shape output tensors bit-identical |
+| Seven-point power-cap sweep selecting 210 W | **-11.6% decode energy/token** while retaining 98.6% of 275 W decode | Same model and workload at every cap |
+| FP8 KV with an explicit 8.5 GB reservation | 209,523-token cache capacity; **196,608-token serving contract** | Exact context boundary and quality gates passed |
+
+The percentages above are deliberately not multiplied together: several rows
+use different controlled workloads. MTP4 also receives no invented standalone
+gain; it helped the selected XPU path, but MTP4 was slower than MTP2 on the
+rejected GGUF/SYCL path because acceptance fell.
+
+Every promoted kernel change passed exact or tolerance-bounded tensor checks,
+neighboring shapes, deterministic canaries, repeat hashes, energy measurement
+and full-service tests. Plausible changes were recorded and rejected when they
+failed to clear the end-to-end threshold: a 16,384-token scheduler chunk was
+2.0% slower at 100K, a Qwen fusion that was 78–84% faster in isolation regressed
+serving decode by 0.98%, and draft scale refinement regressed decode by 0.34%.
+
+## Correctness breakthrough
+
+The optimization work also exposed a vLLM legacy-runner bug: an MTP4
+five-token prefill tail was mistaken for uniform decode and sent through the
+wrong FULL graph, where it consumed invalid reserved recurrent state. Adding
+the missing `has_prefill` condition fixed lengths 5/69/133, the exhaustive
+1–128 sweep and the original 49,925-token failure without changing the prompt
+or XPU arithmetic. The validated temporary
+[runtime patch](docker/patches/patch_uniform_decode_prefill.py),
+[authoritative investigation](docs/gdn-64n5-investigation-pause-2026-08-25.md)
+and [upstream issue #548](https://github.com/vllm-project/vllm-xpu-kernels/issues/548)
+retain the evidence.
+
+Cold long-context prefill remains the principal throughput limitation.
+Qwen3.8-27B has 16 full-attention layers without a sliding window, so prefix
+caching can reuse unchanged multi-turn history but cannot make first ingestion
+free. Decode has no demonstrated remaining lossless change above the 3%
+promotion threshold; the next valid investigation is graph-replay attribution,
+not an unprofiled replacement kernel. Long-session cache eviction and
+cache-preserving compaction remain potentially large user-visible latency work.
+
+## What might still be left
+
+The obvious gains are exhausted, but the investigation is not declared
+finished. These bounded hypotheses remain, in priority order:
+
+1. **Decode graph-replay attribution.** Captured command lists hide much of the
+   decode execution. Aggregate timing and traffic may expose an operation or
+   launch boundary with at least 3% recoverable wall time. No such hotspot has
+   yet been demonstrated.
+2. **Prefix-cache eviction resilience.** A two-request 21–23K side conversation
+   made a warm approximately 157K main session miss its entire usable prefix.
+   Controlled A/Bs of positive GDN/Mamba retention intervals might turn that
+   catastrophic zero hit into bounded replay without reducing the 196,608-token
+   contract.
+3. **Cache-preserving OpenCode compaction.** One real 137,459-token compaction
+   missed the complete warm prefix and took 443 seconds. A guarded side-by-side
+   implementation exists and passed its software tests, but still needs a
+   synthetic long-session inference gate before promotion.
+4. **Final 100K W4A16 accounting.** The new selector is proven end-to-end at 8K
+   and 32K and acts on chunk shapes also used during longer ingestion. A 100K
+   A/B would establish the combined attention-plus-W4 result; benefit there is
+   plausible, not yet measured.
+5. **New evidence for draft acceptance or upstream kernels.** Better
+   activation-aware draft calibration could theoretically raise the decode
+   roof, and future oneDNN/XPU releases may improve exact production shapes.
+   The current cheap draft refinement regressed by 0.34%, however, so neither
+   path merits more work without a materially different candidate.
+
+Target-head or target-weight requantization, more aggressive KV quantization,
+same-traffic output-head kernels, another GDN rewrite, larger scheduler chunks
+and full-TDP operation are not remaining lossless opportunities under this
+project's contract.
 
 ## Quick operations
 
@@ -73,22 +166,32 @@ The planned Huihui abliterated candidate must match the base model's quality and
 
 ## Documentation
 
-- [Active optimization roadmap](docs/active-optimization-roadmap-2026-08-27.md): roofline position, ≥3% promotion threshold and current execution order.
-- [Power efficiency](docs/power-efficiency.md): sweep, selection, persistence and rollback.
-- [Prefill and prefix caching](docs/prefill-and-prefix-cache.md): TTFT scaling, tool-flow result and remaining bottleneck.
-- [XPU performance profile](docs/xpu-performance-profile-2026-08-27.md): measured decode/prefill kernel attribution and ranked 24-hour optimization targets.
-- [Xe2 head-256 attention tuning](docs/xpu-head256-attention-tuning-2026-08-27.md): lossless K64 policy, exact benchmarks, correctness gates, build pitfalls and reproducible patch.
-- [XPU single-user tuning](docs/xpu-single-user-tuning-2026-08-27.md): exact MTP graph gain and rejected Qwen fusion.
-- [Long-session prefix-cache eviction](docs/prefix-cache-eviction-incident-2026-08-26.md): observed full miss, hybrid-cache mechanism and focused reproduction plan.
+Start with:
+
+- [Benchmarks and quality](docs/benchmarks-and-quality.md): complete performance evidence, quality gates and caveats.
 - [Architecture](docs/architecture.md): exact engine, overlay, versions and hashes.
 - [Operations](docs/operations.md): lifecycle, requests, validation and rollback.
-- [Benchmarks and quality](docs/benchmarks-and-quality.md): complete evidence and caveats.
-- [Research and pitfalls](docs/research-and-pitfalls.md): rejected paths and lessons.
-- [Token-0 repetition incident](docs/repetition-incident.md): exact sanitized reproducer, evidence, recovery and pending A/B.
-- [XPU GDN source audit](docs/xpu-gdn-source-audit.md): version forensics, kernel narrowing and controlled correction order.
-- [Rejected GDN maintenance trial](docs/gdn-maintenance-window-2026-08-24.md): direct probe, failed scheduler A/B and rollback gates.
-- [GDN `64*N+5` investigation pause](docs/gdn-64n5-investigation-pause-2026-08-25.md): authoritative evidence boundary, provenance, artifact manifest, rejected hypotheses and restart point.
-- [GDN diagnostic code map](docs/gdn-diagnostic-code-map.md): trusted, negative-control, superseded and observer-invalid instrumentation.
+- [Research and pitfalls](docs/research-and-pitfalls.md): rejected paths and the lessons that shaped the final system.
+
+Optimization reports:
+
+- [Active optimization roadmap](docs/active-optimization-roadmap-2026-08-27.md): roofline position, ≥3% promotion threshold and current execution order.
+- [XPU performance profile](docs/xpu-performance-profile-2026-08-27.md): measured decode/prefill kernel attribution and ranked targets.
+- [W4A16 prefill selector tuning](docs/xpu-w4a16-prefill64-tuning-2026-08-28.md): exact-shape strategy search, bit-identical result, end-to-end gain and bounded build.
+- [Xe2 head-256 attention tuning](docs/xpu-head256-attention-tuning-2026-08-27.md): lossless K64 policy, exact benchmarks and reproducible patch.
+- [XPU single-user tuning](docs/xpu-single-user-tuning-2026-08-27.md): exact MTP graph gain and rejected Qwen fusion.
+- [Power efficiency](docs/power-efficiency.md): seven-point sweep, selection, persistence and rollback.
+- [Prefill and prefix caching](docs/prefill-and-prefix-cache.md): TTFT scaling, tool-flow result and remaining bottleneck.
+- [Optimization resume and OOM postmortem](docs/optimization-resume-2026-08-28.md): compiler incident, 26 GiB/no-swap guardrail and final promoted service.
+
+Correctness and investigation archive:
+
+- [Long-session prefix-cache eviction](docs/prefix-cache-eviction-incident-2026-08-26.md): observed full miss, compaction cliff and focused A/B plans.
+- [Token-0 repetition incident](docs/repetition-incident.md): sanitized reproducer, evidence and recovery.
+- [XPU GDN source audit](docs/xpu-gdn-source-audit.md): version forensics and kernel narrowing.
+- [Rejected GDN maintenance trial](docs/gdn-maintenance-window-2026-08-24.md): failed scheduler A/B and rollback gates.
+- [GDN `64*N+5` investigation](docs/gdn-64n5-investigation-pause-2026-08-25.md): authoritative evidence, root cause and artifact manifest.
+- [GDN diagnostic code map](docs/gdn-diagnostic-code-map.md): trusted, negative-control and superseded instrumentation.
 - [Upstream issue #548](https://github.com/vllm-project/vllm-xpu-kernels/issues/548): submitted Intel/XPU escalation; the [archived body](upstream/vllm-xpu-kernels-64n5-nan-issue.md) is versioned here.
 - [Huihui plan](docs/huihui-plan.md): abliterated-model A/B and promotion gate.
 - [References](docs/references.md): upstream sources and revisions.

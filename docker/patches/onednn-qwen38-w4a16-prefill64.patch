@@ -1,0 +1,37 @@
+diff --git a/src/gpu/intel/gemm/jit/gen_kernel.cpp b/src/gpu/intel/gemm/jit/gen_kernel.cpp
+index c2993baa88..b0f32f85df 100644
+--- a/src/gpu/intel/gemm/jit/gen_kernel.cpp
++++ b/src/gpu/intel/gemm/jit/gen_kernel.cpp
+@@ -189,6 +189,32 @@ status_t gen_desc_t::finalize(const char *tags) {
+         strategy_.unroll[LoopN] = entry_->driverInfo.unroll[LoopN];
+         parseStrategy(entry_->strategy, hw_, problem_, strategy_);
+         modifyStrategy(strategy_, aux_params_);
++
++        // The Xe2 catalog's exact 32x32 entry is slower than its XeHPC 32x64
++        // fallback for Qwen3.8's large W4A16 prefill projections on BMG. Keep
++        // short-M/decode and every unrelated shape on the catalog selection.
++        // oneDNN's column-major GEMM descriptor exposes the API dimensions as
++        // (M, N, K) = (output features, tokens, input features) here.
++        const bool qwen38_w4a16_prefill
++                = hw_ == ngen::HW::Xe2 && n_ >= 1024
++                && problem_.Ta_ext == Type::u4
++                && problem_.Tb_ext == Type::f16
++                && problem_.Tc_ext == Type::f16
++                && ((k_ == 5120
++                            && utils::one_of(m_, 34816, 16384, 14336))
++                        || (k_ == 6144 && m_ == 5120));
++        if (qwen38_w4a16_prefill) {
++            strategy_ = GEMMStrategy(hw_, stepping_);
++            strategy_.unroll[LoopM] = 32;
++            strategy_.unroll[LoopN] = 64;
++            parseStrategy(
++                    "aT32#16,0{cc}+M32,32@64{cc} "
++                    "aM32/16#16,0{cc}+M16,16@64{cc} "
++                    "aB#16,0{cc/ub} wg 8x4 sys af st k128 grf256 sm sn "
++                    "vav di sr bf cc kv afb fp pk128 hi pt sb128 np "
++                    "bm524288/524288 bn1048576/1048576 bk16777216",
++                    hw_, problem_, strategy_);
++        }
+ #ifdef DNNL_DEV_MODE
+     }
+ #endif

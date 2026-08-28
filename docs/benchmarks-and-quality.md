@@ -9,12 +9,21 @@ The persisted cap is 210 W. Decode is content- and MTP-acceptance-dependent, so 
 | ~512/128, five prompt families | 91.98 tok/s median | 1,243 tok/s / 0.383 s | 5 |
 | 8,156/128, five prompt families | 91.08 tok/s median | 1,566 tok/s / 5.207 s | 5 |
 | 476/512, single-user exact-graph profile | 85.61 tok/s median | n/a | 6 |
+| 8,190/8, cold W4A16 selector | n/a | 1,665 tok/s / 4.919 s | 3 |
+| 32,563/8, cold W4A16 selector | n/a | 1,418 tok/s / 22.963 s | 3 |
 | 32,565/8, cold, K64 attention | n/a | 1,325 tok/s / 24.580 s | 1 |
 | 99,889/16, cold, K64 attention | n/a | 896 tok/s / 111.457 s | 1 |
 
 The very short 512-token prefill cell is dominated by fixed HTTP/tokenizer/scheduler overhead and is not used as the headline prefill figure. The 32K and 100K decode cells have too few generated tokens for meaningful sustained decode conclusions.
 
 Power-cap sweep and prefix-cache results are documented separately in [`power-efficiency.md`](power-efficiency.md) and [`prefill-and-prefix-cache.md`](prefill-and-prefix-cache.md).
+
+The contained W4A16 selector promotion reduced three-run cold TTFT by 5.68%
+at 8K and 6.73% at 32K while reducing prefill energy by 5.78% and 6.73%.
+All six exact production-shape output digests matched stock bit for bit; the
+service also passed 7/7 canaries, 8/8 repeat stability, exact baseline hashes,
+and the 131-length finite-logprob sweep. See
+[`xpu-w4a16-prefill64-tuning-2026-08-28.md`](xpu-w4a16-prefill64-tuning-2026-08-28.md).
 
 The K64 attention promotion changes only the Xe2 head-256 workgroup tile. Its post-promotion gate matched all seven deterministic outputs and eight repeat hashes, and passed the 131-length finite-logprob sweep. Full measurements and the source patch are in [`xpu-head256-attention-tuning-2026-08-27.md`](xpu-head256-attention-tuning-2026-08-27.md).
 

@@ -64,12 +64,14 @@ time, so a 5% kernel improvement can clear the 3% service threshold at 8K.
 Do not replace oneDNN without a measured pathological shape or a relevant
 upstream correction.
 
-Result: no build. The W4A16 operator comes from `vllm-xpu-kernels`, whose
-runtime reports oneDNN 3.13.0 at
-`0e2a5bfeef1bfbffc3137464606540233086ce9b`; PyTorch's separate bundled oneDNN
-is 3.12.0 at `80afa71049cd69a3df32adcccb623b12cd7baa22`. The available 3.13.1/3.13.2
-patches contain no Xe2 INT4/BF16 correction applicable to the traced W4A16
-shapes. A library rebuild has no >=3% projection and is therefore skipped.
+Result: accepted after exact-shape tuning. The pinned oneDNN Xe2 catalog's
+32x32 recipe was slower than its existing XeHPC 32x64 fallback for four large
+Qwen projection shapes. A contained selector redirects only those shapes at
+1,024 or more tokens. At 210 W, three-run cold medians improved from 5.2160 to
+4.9195 seconds at 8K and from 24.6192 to 22.9631 seconds at 32K. Prefill energy
+fell 5.78% and 6.73%, respectively. Exact output digests, seven deterministic
+canaries, eight repeat hashes, and the 131-length GDN sweep passed. See
+[`xpu-w4a16-prefill64-tuning-2026-08-28.md`](xpu-w4a16-prefill64-tuning-2026-08-28.md).
 
 ### 3. Xe2 attention dispatch
 
