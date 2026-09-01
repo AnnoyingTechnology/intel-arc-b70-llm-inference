@@ -18,7 +18,9 @@ transparent INT4 target, MTP4, FP8 KV, automatic prefix caching and a persisted
 
 ## Result
 
-The validated patched service exposes `qwen38` at the established `http://127.0.0.1:19622/v1` endpoint. Existing OpenCode sessions therefore require no provider change or restart.
+The validated patched service exposes `qwen38` on port `19622` on every host
+IPv4 interface. Local clients can use `http://127.0.0.1:19622/v1`; LAN clients
+can use `http://<host-address>:19622/v1`.
 
 | Measurement at 210 W | Result |
 |---|---:|
@@ -164,7 +166,9 @@ cd /home/julien/Documents/B70/docker
 docker compose down
 ```
 
-The API is deliberately loopback-only and the container uses `restart: "no"`. LM Studio must not infer on the B70 concurrently.
+The API binds every host IPv4 interface and is unauthenticated; use the host
+firewall to restrict access to trusted networks. The container uses
+`restart: "no"`. LM Studio must not infer on the B70 concurrently.
 
 ## Model and quality contract
 

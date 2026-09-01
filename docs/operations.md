@@ -46,7 +46,13 @@ curl -fsS http://127.0.0.1:19622/v1/chat/completions \
 
 Without `chat_template_kwargs.enable_thinking=false`, the Qwen reasoning parser can return reasoning separately in compatible clients.
 
-OpenCode selector: `local-b70/qwen38`. The provider points directly to the loopback API and is not the global default. Its default reasoning effort is `low`; selectable variants are `off`, `low`, `medium` and `xhigh`, matching the other Qwen3.8 entry. OpenCode sends `off` literally while vLLM expects `none`, so the pinned startup patch normalizes that alias before chat-template rendering.
+The OpenAI-compatible chat and Responses APIs accept exactly four
+reasoning-effort values: `none`, `low`, `medium` and `xhigh`. This model-specific
+contract is enforced in vLLM before chat-template rendering and is reflected in
+the generated OpenAPI schema. Clients must use `none`, not an `off` alias, to
+disable reasoning.
+The Anthropic-compatible `/v1/messages` route accepts `low`, `medium` and
+`xhigh` in `output_config.effort`; its protocol does not define `none` there.
 
 The model options explicitly send `temperature=1`, `top_p=0.95` and
 `top_k=20` using snake-case keys. A localhost capture verified all three fields
@@ -155,13 +161,19 @@ The patch hooks are environment-gated, so the patch invocations and mounts can r
 
 Rollback from a failed Compose edit is to restore the previous file, validate with `docker compose config --quiet`, force-recreate, and check `/health` plus the canaries.
 
-## LAN and always-loaded mode
+## LAN exposure and always-loaded mode
 
-Not enabled. A future promotion needs all of the following as one reviewed change:
+Compose publishes `19622` on `0.0.0.0`, so the API is reachable through every
+host IPv4 interface. Loopback requests continue to work. The API has no
+authentication; the host firewall must scope access to trusted networks.
 
-- A candidate that passes [`huihui-plan.md`](huihui-plan.md).
-- An explicit bind address, preferably the B70 host's LAN address rather than `0.0.0.0`.
-- Host firewall scoping to trusted local subnets.
-- Authentication or a trusted authenticated reverse proxy; the vLLM API is otherwise unauthenticated.
-- `restart: unless-stopped` only after the model and exposure policy are final.
-- Validation from an authorized LAN client and after one reboot.
+Validate through a host interface from an authorized LAN client:
+
+```bash
+curl -fsS http://<host-address>:19622/health
+curl -fsS http://<host-address>:19622/v1/models
+```
+
+Always-loaded mode is not enabled: `restart: "no"` remains deliberate. Change
+it only after the model and lifecycle policy are final, then validate after one
+reboot.

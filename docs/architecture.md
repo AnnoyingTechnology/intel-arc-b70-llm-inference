@@ -57,15 +57,29 @@ Applied in this order from `/home/julien/Documents/B70/docker/patches`:
 2. `patch_mtp_boundary.py` — `41d2f74e5fef1f074b76b5a90dd1016de437228431802cfb1fa7bd7ce4cc9b50`.
 3. `patch_draft_lmhead_int4.py` — `e299c8fd4f9a6ae9fe6f42ac3cfda451654d9fcd2b183fb1e6255b0680575951`.
 4. `patch_draft_mtp_int4.py` — `2dde6d58863cfc1b871daa2f871ce719c9526dd39607d1f325217b6f20a5ff3d`.
-5. `patch_reasoning_effort_off.py` — `2ac1af03723e80eab2a05cb5a4ea8ebfc1021082607d43ffc54071da008e0641`.
+5. `patch_reasoning_effort_contract.py` — `7f1e1d1cc3f66ec2a5f67890c3ef683ad1fc41b61689e8b81a1305d37a9da858`.
 6. `patch_gdn_prompt_padding.py` — `0188d68fdad6ebbf8946bd330617c07d1348c21c789b1fa37bce8a0ec6a01eff`.
 7. `patch_uniform_decode_prefill.py` — `1c9d3db9ef1a9abfdd00dd488bc45bda692174589ed62c94ad95f0b6eccec951`.
 
-The fifth patch normalizes OpenCode's visible `off` reasoning variant to vLLM's `none`. The sixth remains mounted but is disabled. The seventh fixes vLLM's legacy graph classifier by forbidding uniform-decode dispatch whenever scheduler state identifies prefill; it replaces the earlier prompt-padding containment without changing prompts. The local image contains the validated Q256/K64 Xe2 attention pair plus the matched `_xpu_C` and GDN companion carrying the contained W4A16 prefill selector. Revalidate every runtime patch and rebuild both kernel pairs before changing either source revision.
+The fifth patch narrows vLLM's generic reasoning-effort request types to this
+single model's `none`, `low`, `medium` and `xhigh` contract across chat, batch
+chat, render and Responses routes. It also narrows the Anthropic-compatible
+Messages route to its supported enabled profiles (`low`, `medium`, `xhigh`).
+FastAPI therefore advertises only effort values that the Qwen template accepts.
+The sixth remains mounted but is disabled. The seventh fixes vLLM's legacy
+graph classifier by forbidding uniform-decode dispatch whenever scheduler state
+identifies prefill; it replaces the earlier
+prompt-padding containment without changing prompts. The local image contains
+the validated Q256/K64 Xe2 attention pair plus the matched `_xpu_C` and GDN
+companion carrying the contained W4A16 prefill selector. Revalidate every
+runtime patch and rebuild both kernel pairs before changing either source
+revision.
 
 ## Network and lifecycle
 
-- Host endpoint: `127.0.0.1:19622`; container endpoint: `0.0.0.0:8000`.
+- Host endpoint: `0.0.0.0:19622`; container endpoint: `0.0.0.0:8000`.
+  The unauthenticated API is reachable through every host IPv4 interface, so
+  the host firewall must restrict it to trusted networks.
 - Served name: `qwen38`.
 - Automatic tool choice enabled with vLLM's `qwen3_coder` tool-call parser.
 - `restart: "no"`; it does not reserve the GPU after a host reboot until explicitly started.
@@ -81,4 +95,5 @@ The fifth patch normalizes OpenCode's visible `off` reasoning variant to vLLM's 
 - The helper verifies PCI `8086:e223`, refuses values outside Intel's documented 160–290 W range, and verifies the applied Xe hwmon value.
 - Stopping the unit restores the board's observed pre-sweep 275 W cap.
 
-LAN exposure and automatic restart are intentionally deferred until an abliterated candidate passes the promotion gate and access controls are decided.
+LAN exposure is enabled on every host IPv4 interface. Automatic restart remains
+deferred until the model and lifecycle policy are final.
