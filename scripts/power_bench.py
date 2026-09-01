@@ -370,7 +370,7 @@ def main() -> None:
     parser.add_argument("--content-multiplier", type=int, default=1)
     parser.add_argument("--content-chars", type=int)
     parser.add_argument("--url", default=DEFAULT_URL)
-    parser.add_argument("--model", default="qwen38")
+    parser.add_argument("--model", default="qwen-3.8-27b")
     parser.add_argument("--timeout", type=float, default=600.0)
     parser.add_argument("--settle", type=float, default=1.0)
     parser.add_argument("--cold", action="store_true")

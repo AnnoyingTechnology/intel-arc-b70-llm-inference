@@ -119,7 +119,7 @@ def main() -> None:
     parser.add_argument(
         "--url", default="http://127.0.0.1:19622/v1/completions"
     )
-    parser.add_argument("--model", default="qwen38")
+    parser.add_argument("--model", default="qwen-3.8-27b")
     parser.add_argument(
         "--lengths",
         type=parse_lengths,

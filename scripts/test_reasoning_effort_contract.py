@@ -29,7 +29,7 @@ def enum_values(schema: dict[str, Any], property_name: str) -> set[str]:
 
 def chat_payload(effort: str) -> dict[str, Any]:
     return {
-        "model": "qwen38",
+        "model": "qwen-3.8-27b",
         "messages": [{"role": "user", "content": "hello"}],
         "reasoning_effort": effort,
     }
@@ -37,7 +37,7 @@ def chat_payload(effort: str) -> dict[str, Any]:
 
 def batch_payload(effort: str) -> dict[str, Any]:
     return {
-        "model": "qwen38",
+        "model": "qwen-3.8-27b",
         "messages": [[{"role": "user", "content": "hello"}]],
         "reasoning_effort": effort,
     }
@@ -45,7 +45,7 @@ def batch_payload(effort: str) -> dict[str, Any]:
 
 def responses_payload(effort: str) -> dict[str, Any]:
     return {
-        "model": "qwen38",
+        "model": "qwen-3.8-27b",
         "input": "hello",
         "reasoning": {"effort": effort},
     }
@@ -53,7 +53,7 @@ def responses_payload(effort: str) -> dict[str, Any]:
 
 def anthropic_payload(effort: str) -> dict[str, Any]:
     return {
-        "model": "qwen38",
+        "model": "qwen-3.8-27b",
         "messages": [{"role": "user", "content": "hello"}],
         "max_tokens": 8,
         "output_config": {"effort": effort},

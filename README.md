@@ -18,7 +18,7 @@ transparent INT4 target, MTP4, FP8 KV, automatic prefix caching and a persisted
 
 ## Result
 
-The validated patched service exposes `qwen38` on port `19622` on every host
+The validated patched service exposes `qwen-3.8-27b` on port `19622` on every host
 IPv4 interface. Local clients can use `http://127.0.0.1:19622/v1`; LAN clients
 can use `http://<host-address>:19622/v1`.
 

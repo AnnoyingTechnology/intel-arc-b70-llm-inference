@@ -78,7 +78,7 @@ services:
         --prefix-caching-hash-algo sha256
         --prefix-match-unit 64
         --enable-prompt-tokens-details
-        --served-model-name qwen38
+        --served-model-name qwen-3.8-27b
         --language-model-only
         --reasoning-parser qwen3
         --enable-auto-tool-choice

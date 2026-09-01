@@ -141,7 +141,7 @@ class CaptureHandler(BaseHTTPRequestHandler):
                     "object": "list",
                     "data": [
                         {
-                            "id": "qwen38",
+                            "id": "qwen-3.8-27b",
                             "object": "model",
                             "created": int(time.time()),
                             "owned_by": "local-b70",
@@ -181,14 +181,14 @@ class CaptureHandler(BaseHTTPRequestHandler):
                 "id": chunk_id,
                 "object": "chat.completion.chunk",
                 "created": now,
-                "model": payload.get("model", "qwen38"),
+                "model": payload.get("model", "qwen-3.8-27b"),
                 "choices": [{"index": 0, "delta": {"role": "assistant", "content": "CAPTURED"}, "finish_reason": None}],
             },
             {
                 "id": chunk_id,
                 "object": "chat.completion.chunk",
                 "created": now,
-                "model": payload.get("model", "qwen38"),
+                "model": payload.get("model", "qwen-3.8-27b"),
                 "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
                 "usage": {"prompt_tokens": 0, "completion_tokens": 1, "total_tokens": 1},
             },
@@ -263,7 +263,7 @@ def replay(args: argparse.Namespace) -> None:
         payload = json.loads(args.request.read_text())
     elif args.synthetic_user_repeat_count is not None:
         payload = {
-            "model": "qwen38",
+            "model": "qwen-3.8-27b",
             "messages": [],
             "reasoning_effort": "low",
         }

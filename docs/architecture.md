@@ -80,7 +80,7 @@ revision.
 - Host endpoint: `0.0.0.0:19622`; container endpoint: `0.0.0.0:8000`.
   The unauthenticated API is reachable through every host IPv4 interface, so
   the host firewall must restrict it to trusted networks.
-- Served name: `qwen38`.
+- Served name: `qwen-3.8-27b`.
 - Automatic tool choice enabled with vLLM's `qwen3_coder` tool-call parser.
 - `restart: "no"`; it does not reserve the GPU after a host reboot until explicitly started.
 - Container capabilities are dropped and `no-new-privileges` is enabled.

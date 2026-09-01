@@ -12,7 +12,9 @@ curl -fsS http://127.0.0.1:19622/health
 curl -fsS http://127.0.0.1:19622/v1/models | jq '.data[] | {id, root, max_model_len}'
 ```
 
-Expected model ID: `qwen38`. Expected `max_model_len`: `196608`. Initial compilation can take roughly two minutes after the compile cache is empty.
+Expected model ID: `qwen-3.8-27b`. Expected `max_model_len`: `196608`.
+Initial compilation can take roughly two minutes after the compile cache is
+empty.
 
 Follow startup or failure logs:
 
@@ -36,7 +38,7 @@ Non-thinking request:
 curl -fsS http://127.0.0.1:19622/v1/chat/completions \
   -H 'Content-Type: application/json' \
   -d '{
-    "model":"qwen38",
+    "model":"qwen-3.8-27b",
     "messages":[{"role":"user","content":"Reply with exactly OK"}],
     "temperature":0,
     "max_tokens":8,
