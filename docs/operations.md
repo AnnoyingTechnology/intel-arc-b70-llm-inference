@@ -56,6 +56,15 @@ disable reasoning.
 The Anthropic-compatible `/v1/messages` route accepts `low`, `medium` and
 `xhigh` in `output_config.effort`; its protocol does not define `none` there.
 
+Vision is enabled on the OpenAI-compatible chat route for one image per
+request. Send the image as a normal `image_url` content part, using either an
+HTTP URL reachable by the server or a `data:<mime>;base64,...` URL. Video is
+disabled. To suppress reasoning for OCR or metadata extraction, retain:
+
+```json
+{"chat_template_kwargs":{"enable_thinking":false}}
+```
+
 The model options explicitly send `temperature=1`, `top_p=0.95` and
 `top_k=20` using snake-case keys. A localhost capture verified all three fields
 in the emitted API request. Do not change them to camelCase: this OpenAI-compatible

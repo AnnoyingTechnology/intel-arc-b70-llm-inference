@@ -2,7 +2,7 @@ name: b70-vllm
 
 services:
   qwen38:
-    image: b70-vllm-latest-xpu:a397c58-head256-k64-prefill64
+    image: b70-vllm-latest-xpu:a397c58-head256-k64-prefill64-vision96
     pull_policy: never
     container_name: b70-vllm-qwen38-latest
     restart: "no"
@@ -79,7 +79,7 @@ services:
         --prefix-match-unit 64
         --enable-prompt-tokens-details
         --served-model-name qwen-3.8-27b
-        --language-model-only
+        --limit-mm-per-prompt '{"image":1,"video":0}'
         --reasoning-parser qwen3
         --enable-auto-tool-choice
         --tool-call-parser qwen3_coder

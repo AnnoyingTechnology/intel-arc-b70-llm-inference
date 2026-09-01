@@ -12,15 +12,17 @@
 
 - Compose definition: `/home/julien/Documents/B70/docker/compose.yaml`.
 - Container: `b70-vllm-qwen38-latest`.
-- Image: local derivative `b70-vllm-latest-xpu:a397c58-head256-k64-prefill64`, ID `sha256:547811943b8b78a48a17ca17e1a16e8927ae98e982e444640f7e4035b02d7d68`, based on `sha256:dbe76bb9ba1a55c5ab163f0e1ee961f29d0bc5bd2706f542083c158d8b4c53c5`.
+- Image: local derivative `b70-vllm-latest-xpu:a397c58-head256-k64-prefill64-vision96`, ID `sha256:a5ab5fc08fe7a1755eedc01e45749190a8a53b4f41c0db1430f65df70d2b4a50`, based on `sha256:547811943b8b78a48a17ca17e1a16e8927ae98e982e444640f7e4035b02d7d68`.
 - vLLM source: `46638857fdbb30e0c232c9e8f9cb1ff6d6f545c3`.
 - PyTorch: `2.13.0+xpu`.
-- `vllm-xpu-kernels` source: `a397c58eb7781e6fe0d6b3fb7c25d21b5f658784`, with the local head-256 Q256/K64 attention policy and the contained oneDNN W4A16 prefill selector.
+- `vllm-xpu-kernels` source: `a397c58eb7781e6fe0d6b3fb7c25d21b5f658784`, with the local head-256 Q256/K64 language-attention policy, head-96 non-causal vision attention, and the contained oneDNN W4A16 prefill selector.
 - XPU graphs enabled; one request sequence; MTP with four speculative tokens.
 - `interactivity` performance mode captures exact graph sizes 1–10. This avoids
   padding MTP4's five-token verifier to the balanced profile's eight-row graph.
 - FP8 KV cache with an explicit 8,500,000,000-byte reservation.
 - Maximum model length: 196,608 tokens.
+- Vision modules are loaded. Each request may contain at most one image; video
+  inputs are disabled.
 - SHA-256 automatic prefix caching enabled for multi-round agent and tool-call workloads, with a 64-token match unit inside the XPU hybrid cache's larger physical blocks. The power sweep retained cold/fixed controls so historical numbers remain comparable.
 - Scheduler budget: 8,192 tokens. A 16,384-token 100K-prefill A/B regressed both TTFT and energy efficiency.
 - The persistent Compose volume `b70-latest-test_latest-vllm-cache` retains compiled graphs.
@@ -70,9 +72,10 @@ The sixth remains mounted but is disabled. The seventh fixes vLLM's legacy
 graph classifier by forbidding uniform-decode dispatch whenever scheduler state
 identifies prefill; it replaces the earlier
 prompt-padding containment without changing prompts. The local image contains
-the validated Q256/K64 Xe2 attention pair plus the matched `_xpu_C` and GDN
-companion carrying the contained W4A16 prefill selector. Revalidate every
-runtime patch and rebuild both kernel pairs before changing either source
+the validated Q256/K64 Xe2 language-attention pair, the head-96 non-causal
+vision-attention pair, and the matched `_xpu_C` and GDN companion carrying the
+contained W4A16 prefill selector. Revalidate every runtime patch and rebuild
+both kernel pairs before changing either source
 revision.
 
 ## Network and lifecycle
