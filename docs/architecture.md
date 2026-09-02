@@ -25,7 +25,7 @@
   inputs are disabled.
 - SHA-256 automatic prefix caching enabled for multi-round agent and tool-call workloads, with a 64-token match unit inside the XPU hybrid cache's larger physical blocks. The power sweep retained cold/fixed controls so historical numbers remain comparable.
 - Scheduler budget: 8,192 tokens. A 16,384-token 100K-prefill A/B regressed both TTFT and energy efficiency.
-- The persistent Compose volume `b70-latest-test_latest-vllm-cache` retains compiled graphs.
+- The persistent Compose volume `b70-vllm-cache` retains compiled graphs.
 
 With prefix caching and aligned hybrid-cache pages, the engine reports 209,523 tokens of KV capacity and 1.07x maximum concurrency at the configured 196,608-token contract. The earlier 214,214-token figure and exact 196,480+128 boundary completion were measured before prefix caching changed the cache layout. At the user's direction, that five-minute mechanical request was not repeated; current capacity headroom is observed, while exact-boundary completion under the final cache mode remains unverified. A cold-cache recreation completed its two main compilation phases in about 58 and 14 seconds.
 
@@ -85,7 +85,8 @@ revision.
   the host firewall must restrict it to trusted networks.
 - Served name: `qwen-3.8-27b`.
 - Automatic tool choice enabled with vLLM's `qwen3_coder` tool-call parser.
-- `restart: "no"`; it does not reserve the GPU after a host reboot until explicitly started.
+- `restart: unless-stopped`; Docker starts inference after a host reboot unless
+  the service was explicitly stopped.
 - Container capabilities are dropped and `no-new-privileges` is enabled.
 - Model directories are read-only inside the container.
 
@@ -98,5 +99,5 @@ revision.
 - The helper verifies PCI `8086:e223`, refuses values outside Intel's documented 160–290 W range, and verifies the applied Xe hwmon value.
 - Stopping the unit restores the board's observed pre-sweep 275 W cap.
 
-LAN exposure is enabled on every host IPv4 interface. Automatic restart remains
-deferred until the model and lifecycle policy are final.
+LAN exposure is enabled on every host IPv4 interface. Automatic restart is
+enabled and must remain paired with trusted-network firewall restrictions.

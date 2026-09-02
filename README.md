@@ -168,7 +168,8 @@ docker compose down
 
 The API binds every host IPv4 interface and is unauthenticated; use the host
 firewall to restrict access to trusted networks. The container uses
-`restart: "no"`. LM Studio must not infer on the B70 concurrently.
+`restart: unless-stopped`, so inference starts with Docker after a reboot unless
+it was explicitly stopped. LM Studio must not infer on the B70 concurrently.
 
 ## Model and quality contract
 

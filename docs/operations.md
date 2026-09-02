@@ -151,11 +151,13 @@ docker compose ps
 curl -fsS http://127.0.0.1:19622/health
 ```
 
-The external persistent compile-cache volume is retained by `docker compose down`. Do not remove `b70-latest-test_latest-vllm-cache` unless deliberately discarding it.
+The external persistent compile-cache volume is retained by `docker compose down`. Do not remove `b70-vllm-cache` unless deliberately discarding it.
 
 ## Reboot behavior
 
-The 210 W power cap is applied automatically after reboot. `restart: "no"` for inference is deliberate: start the model with `docker compose up -d`. This avoids silently reserving the B70 or exposing a future LAN endpoint.
+The 210 W power cap is applied automatically after reboot. The inference
+container uses `restart: unless-stopped`, so Docker starts it after reboot
+unless it was explicitly stopped. Verify `/health` after planned reboots.
 
 Do not run LM Studio inference concurrently. LM Studio and vLLM compete for the same 32 GiB device and can produce misleading failures or performance results. Merely running `lms runtime ls` can start LM Studio's background service.
 
@@ -185,6 +187,5 @@ curl -fsS http://<host-address>:19622/health
 curl -fsS http://<host-address>:19622/v1/models
 ```
 
-Always-loaded mode is not enabled: `restart: "no"` remains deliberate. Change
-it only after the model and lifecycle policy are final, then validate after one
-reboot.
+Always-loaded mode uses `restart: unless-stopped`. Validate the container,
+`/health`, the model listing and the 210 W power cap after a planned reboot.

@@ -58,7 +58,8 @@ If the Huihui candidate passes, replace the base rather than keeping both reside
 - Give it a stable served name and update `local-b70` once.
 - Bind only to the intended LAN address.
 - Restrict access to trusted subnets and add authentication or an authenticated reverse proxy.
-- Change the restart policy to `unless-stopped` and validate after reboot.
+- Retain the `unless-stopped` restart policy and validate the replacement after
+  reboot.
 - Retain the base model and its Compose revision on disk as rollback until the new service has an agreed soak period.
 
 An uncensored endpoint must not be anonymously reachable. The absence of model refusals transfers policy enforcement to network access, clients and users.
