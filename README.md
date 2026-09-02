@@ -64,7 +64,7 @@ graph overhead.
 | Exact five-row single-user MTP graph | 84.60 → 85.61 tok/s, **+1.19%** | Removes graph padding only |
 | Contained oneDNN W4A16 32x64 selector for four exact prefill projections | 8K TTFT **-5.68%**; 32K **-6.73%** | Six production-shape output tensors bit-identical |
 | Seven-point power-cap sweep selecting 210 W | **-11.6% decode energy/token** while retaining 98.6% of 275 W decode | Same model and workload at every cap |
-| FP8 KV with an explicit 8.5 GB reservation | 209,523-token cache capacity; **196,608-token serving contract** | Exact context boundary and quality gates passed |
+| FP8 KV with an explicit 8.5 GB reservation | 209,523-token cache capacity; **196,608-token serving contract** | Exact boundary passed before the final prefix-cache/vision layout; current-layout and ceiling probes pending |
 
 The percentages above are deliberately not multiplied together: several rows
 use different controlled workloads. MTP4 also receives no invented standalone

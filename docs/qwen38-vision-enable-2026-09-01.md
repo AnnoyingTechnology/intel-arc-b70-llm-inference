@@ -3,9 +3,10 @@
 ## Outcome
 
 Qwen3.8-27B now accepts one image per OpenAI-compatible chat request while
-retaining the complete 196,608-token serving contract, the exact
+starting with the configured 196,608-token serving limit, the exact
 8,500,000,000-byte FP8 KV reservation, one sequence, MTP4 and every existing
-runtime patch. Video remains disabled.
+runtime patch. Video remains disabled. The exact 196,608-token boundary has not
+yet been repeated with the final prefix-cache and vision layout.
 
 The healthy engine reports 209,523 KV-cache tokens and 1.0656934306569343x
 maximum concurrency at 196,608 tokens. Loading the vision-capable model used
@@ -84,15 +85,15 @@ After the run the container was healthy, had zero restarts, was not OOM-killed,
 and reported no request-time errors. No output-quality gate was run because no
 weights, logits, precision, sampler or generation policy changed.
 
-## Follow-up milestone: exact multimodal VRAM envelope
+## Follow-up milestone: current boundary and absolute stable ceiling
 
 Status: **pending**.
 
 Vision enablement proves that the former language-only configuration left
 enough non-KV device memory to load the 921,460,192-byte vision tensor payload
-and its required runtime allocations without reducing the context contract or
-the KV reservation. It does not yet establish the exact reusable remainder
-during a worst-case multimodal request.
+and its required runtime allocations while retaining the configured context
+limit and KV reservation. It does not prove completion at that boundary or
+establish the exact reusable remainder during a worst-case multimodal request.
 
 The current 8,500,000,000-byte KV setting reports capacity for 209,523 tokens,
 which is exactly 12,915 tokens beyond the 196,608-token serving limit. A simple
@@ -101,6 +102,11 @@ reclaimable-byte result: vLLM converts the byte budget into discrete cache
 blocks and may round the realized allocation. Do not promote that estimate into
 configuration.
 
+The model configuration declares a native 262,144-token limit. The configured
+196,608-token serving limit, the engine-reported 209,523-token KV capacity and
+that native limit are distinct quantities. Neither reported capacity nor a
+successful engine start demonstrates a stable request boundary.
+
 The ten-file validation reached 12,740 image tokens, but did not combine the
 largest supported image workload with a near-limit text sequence. Startup
 figures and rounded `xpu-smi` output are also insufficient to identify a safe
@@ -108,11 +114,13 @@ production boundary.
 
 ### Question to settle
 
-Determine empirically, to the last demonstrated stable byte, the memory
-envelope for one-image inference at the full 196,608-token contract. Then
-decide deliberately whether any confirmed remainder should remain transient
-headroom, increase KV capacity for prefix-cache retention and shorter-request
-concurrency, or support a larger multimodal limit.
+First repeat the exact 196,608-token boundary on the final runtime. Then
+determine empirically the highest repeatedly stable total context, up to the
+model's native 262,144-token limit, for both text-only and worst-case one-image
+inference. Establish the corresponding exact KV-memory envelope and decide
+deliberately whether confirmed remainder should remain transient headroom,
+increase prefix-cache retention and shorter-request concurrency, or support a
+larger serving limit.
 
 ### Fixed contract
 
@@ -120,8 +128,12 @@ concurrency, or support a larger multimodal limit.
 - Preserve model weights, target logits, FP8 KV precision, sampling semantics,
   MTP4, the single-sequence contract, and the established power policy.
 - Change one explicit memory control at a time and record its exact byte value.
+- Count image, prompt and generated tokens against the tested total context;
+  record all three independently.
 - Do not infer an accepted setting from nominal VRAM, rounded utilization, or a
   proportional tokens-to-bytes calculation.
+- Do not treat the reported 209,523-token KV capacity as a stable request
+  ceiling or exceed the native 262,144-token model limit.
 - Treat increasing the number of images or encoder-cache budget as a separate
   serving-contract decision, not as an incidental memory tweak.
 
@@ -130,17 +142,20 @@ concurrency, or support a larger multimodal limit.
 1. Capture the current configuration, engine-reported KV capacity, allocator
    state, device-memory telemetry, container restart/OOM state, and cold-start
    high-water mark as the baseline.
-2. Exercise the largest supported image shape and tokenization together with a
-   near-limit sequence, then decode far enough to expose steady-state and
-   transient allocations. Cover cold and warm prefix-cache states.
-3. Search exact `--kv-cache-memory` byte values with a bounded bracketed search;
-   do not guess by reducing the context limit. Repeat cold engine starts and
-   the worst-case request at each candidate because initialization success
-   alone is not stability evidence.
-4. Record the lowest demonstrated failing byte value and highest repeatedly
-   stable byte value, including the failure mode, measured high-water behavior,
-   and cache-block count.
-5. Promote nothing until the production container remains healthy with no OOM,
+2. Repeat the exact configured boundary, including enough decode to bring the
+   request total to 196,608 tokens, in text-only and largest-image cases. Cover
+   cold and warm prefix-cache states.
+3. Search candidate `--max-model-len` values above 196,608 with a bounded
+   bracketed search. Within each KV allocation, test exact request totals no
+   larger than the engine-reported capacity.
+4. If more KV capacity is required, search exact `--kv-cache-memory` byte values
+   separately, then repeat cold engine starts and the worst-case request at each
+   candidate. Change only one configuration value between trials because
+   initialization success alone is not stability evidence.
+5. Record the lowest demonstrated failing context and byte values and the
+   highest repeatedly stable values, including the failure mode, measured
+   high-water behavior and cache-block count.
+6. Promote nothing until the production container remains healthy with no OOM,
    restart, request error, or output-canary regression. A full output-quality
    suite is unnecessary unless a later experiment changes numerical or
    generation semantics.
@@ -149,7 +164,13 @@ Keep raw measurements outside Git when large, and summarize the exact commands,
 inputs, repetitions, boundary, and artifact paths here or in a dated companion
 report.
 
-## Rollback
+## Experiment rollback
+
+Restore the vision image with `--max-model-len 196608` and
+`--kv-cache-memory 8500000000`, recreate the service, and verify the health
+endpoint, model listing, text canary and one-image canary.
+
+## Vision rollback
 
 Restore image `b70-vllm-latest-xpu:a397c58-head256-k64-prefill64`, replace the
 multimodal limit with `--language-model-only`, recreate the service, and verify
