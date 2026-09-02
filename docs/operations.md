@@ -169,7 +169,23 @@ The 210 W power cap is applied automatically after reboot. The inference
 container uses `restart: unless-stopped`, so Docker starts it after reboot
 unless it was explicitly stopped. Verify `/health` after planned reboots.
 
-Do not run LM Studio inference concurrently. LM Studio and vLLM compete for the same 32 GiB device and can produce misleading failures or performance results. Merely running `lms runtime ls` can start LM Studio's background service.
+The host defaults to `multi-user.target`. GNOME, GDM, X.Org and the LM Studio
+package were removed on 2026-09-02; user-owned model, cache, configuration and
+download files were deliberately preserved. Debian package management remains
+standard: no APT pins, holds, preferences or source changes were added. Retained
+server and administration packages were marked manually installed before the
+orphan cleanup so a normal future `apt autoremove` does not remove them.
+
+Validate the headless boot contract:
+
+```bash
+systemctl get-default
+systemctl is-active ssh NetworkManager docker b70-power-limit
+docker inspect --format '{{.State.Health.Status}} {{.HostConfig.RestartPolicy.Name}}' b70-vllm-qwen38-latest
+```
+
+Do not reinstall or start LM Studio alongside vLLM. Both would compete for the
+same 32 GiB device and produce misleading failures or performance results.
 
 ## Rollback of the draft-only speed overlay
 

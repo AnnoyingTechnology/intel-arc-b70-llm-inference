@@ -2,20 +2,19 @@
 
 ## Safety and scope
 
-- This is an experimental workstation, but preserve the interactive desktop and
-  the established inference service unless the user explicitly authorizes an
-  outage.
+- This is a headless inference server. Preserve the established inference
+  service unless the user explicitly authorizes an outage.
 - Before a compile, benchmark, or profiler run, estimate its CPU, RAM, swap,
   storage, and GPU impact. Keep resource use proportionate to the experiment.
 - Never run an uncapped compiler container. Use a Docker memory cgroup limit so
   a failed experiment is killed inside its container instead of invoking the
   host OOM killer.
-- On this 48 GB host, compiler containers are limited to 26 GiB RAM with no
+- On this 64 GB host, compiler containers are limited to 26 GiB RAM with no
   swap allowance, at most four build jobs, and only the targets required by the
   experiment. Raise any limit only with explicit user approval.
 - Do not run a build alongside a benchmark. Confirm at least 12 GiB host memory
-  remains available before starting either workload and stop if the desktop,
-  inference service, or system responsiveness degrades.
+  remains available before starting either workload and stop if the inference
+  service or system responsiveness degrades.
 
 ## Optimization contract
 

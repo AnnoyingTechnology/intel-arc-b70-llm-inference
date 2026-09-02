@@ -95,7 +95,7 @@ Final permanent-service evidence:
 - `results/quality-compose-draft-int4-32k-nonthinking.json`
 - `results/quality-compose-final-qwen38-mtp4-nonthinking.json`
 
-Unsloth reference artifact:
+Historical Unsloth reference artifact (no longer resident as of 2026-09-02):
 
 `/srv/models/lm-studio/unsloth/Qwen3.8-27B-GGUF/Qwen3.8-27B-UD-Q4_K_XL.gguf`
 

@@ -2,6 +2,13 @@
 
 ## LM Studio installation provenance
 
+Current state supersedes the historical cleanup below: on 2026-09-02 the host
+became a pure headless vLLM server and the LM Studio Debian package, GNOME, GDM
+and X.Org were removed. User-owned model, cache, configuration and download
+files were not deleted. The former Qwen GGUF reference under
+`/srv/models/lm-studio` is no longer resident; the recorded comparison results
+and hashes remain historical evidence.
+
 Two LM Studio tracks had coexisted. The pre-reboot session used a newer AppImage. After reboot, the desktop entry launched the installed Debian package at `0.4.6+1`. That package was upgraded in place to `0.4.21+2`, but its already-running 0.4.6 process retained the old mapped executable until exit. This explained the apparent version contradiction; it was not another hidden install.
 
 Cleanup completed on 2026-08-24:

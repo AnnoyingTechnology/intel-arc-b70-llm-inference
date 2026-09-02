@@ -169,7 +169,9 @@ docker compose down
 The API binds every host IPv4 interface and is unauthenticated; use the host
 firewall to restrict access to trusted networks. The container uses
 `restart: unless-stopped`, so inference starts with Docker after a reboot unless
-it was explicitly stopped. LM Studio must not infer on the B70 concurrently.
+it was explicitly stopped. The host boots to `multi-user.target`; GNOME, GDM,
+X.Org and the LM Studio package were removed on 2026-09-02. Model and reference
+data were left untouched.
 
 ## Model and quality contract
 
