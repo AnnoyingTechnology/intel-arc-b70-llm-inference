@@ -77,10 +77,14 @@ Automatic tool selection is enabled server-side with vLLM's `qwen3_coder` parser
 
 Automatic prefix caching is enabled with SHA-256 keys and a 64-token prefix-match unit. Repeated conversations and tool-call follow-ups can reuse cached context inside the XPU hybrid cache's larger physical blocks; cold, unrelated prompts still pay normal prefill cost. Cache entries are in-memory and disappear when the service restarts.
 
-The workstation OpenCode profile advertises `context: 262144`,
-`input: 253952` and `output: 8192`. This reserves 8,192 tokens for generation
-while agent sessions grow incrementally through the prefix cache. Do not use a
-full cold-context request as a routine health check; use the short text and
+The workstation OpenCode profile advertises the proven usable contract:
+`context: 253952`, `input: 245760` and `output: 8192`. The server still exposes
+the model's native 262,144-token limit. The 8,192-token gap between client and
+server is required runtime headroom: exact zero- and 4,096-reserve requests
+eventually parked at scheduler capacity, while the exact 253,824+128 boundary
+completed. The separate 8,192-token output allowance is inside the client
+context. Agent sessions grow incrementally through the prefix cache. Do not use
+a full cold-context request as a routine health check; use the short text and
 vision canaries instead.
 
 `--max-num-seqs 1 --performance-mode interactivity` is deliberate for this

@@ -25,6 +25,24 @@ service also passed 7/7 canaries, 8/8 repeat stability, exact baseline hashes,
 and the 131-length finite-logprob sweep. See
 [`xpu-w4a16-prefill64-tuning-2026-08-28.md`](xpu-w4a16-prefill64-tuning-2026-08-28.md).
 
+### Native-window low-context and boundary gates
+
+A five-family cold A/B compared the prior 196,608/8.5 GB profile with the
+native 262,144/10.3 GB server profile. At approximately 512 prompt tokens,
+median TTFT changed by -0.11%, prefill by +0.71%, and decode by +0.07%. At
+approximately 8K, median TTFT changed by -0.14% and prefill by +0.12%. The 8K
+decode median changed by -5.71% alongside lower MTP acceptance (0.639 versus
+0.691); the invariant prefill path and 512-token decode show no systemic
+low-context collapse from enabling the larger server window.
+
+The exact usable boundary is 253,952 total tokens. A 253,824-token prompt plus
+128 forced output tokens completed with `finish_reason=length`, 1,750.44 s
+TTFT, 1,770.16 s total time, 6.44 decode tok/s and a 70°C peak. Requests with
+zero and 4,096 tokens of reserve below the native 262,144 limit progressed but
+ultimately parked at scheduler capacity; OpenCode therefore keeps an 8,192-token
+runtime reserve. Full evidence and raw-result location are in
+[`context-ceiling-probe-2026-09-02.md`](context-ceiling-probe-2026-09-02.md).
+
 The K64 attention promotion changes only the Xe2 head-256 workgroup tile. Its post-promotion gate matched all seven deterministic outputs and eight repeat hashes, and passed the 131-length finite-logprob sweep. Full measurements and the source patch are in [`xpu-head256-attention-tuning-2026-08-27.md`](xpu-head256-attention-tuning-2026-08-27.md).
 
 The single-user profile uses vLLM's built-in `interactivity` mode so MTP4's
@@ -68,6 +86,7 @@ The promoted profile passed:
 - Eight identical repeat outputs and hashes.
 - A 30,362-prompt-token needle retrieval twice, including through permanent Compose.
 - The exact 196,608-token boundary test.
+- The exact 253,952-token usable boundary test under the native server profile.
 
 Final permanent-service evidence:
 

@@ -64,7 +64,7 @@ graph overhead.
 | Exact five-row single-user MTP graph | 84.60 → 85.61 tok/s, **+1.19%** | Removes graph padding only |
 | Contained oneDNN W4A16 32x64 selector for four exact prefill projections | 8K TTFT **-5.68%**; 32K **-6.73%** | Six production-shape output tensors bit-identical |
 | Seven-point power-cap sweep selecting 210 W | **-11.6% decode energy/token** while retaining 98.6% of 275 W decode | Same model and workload at every cap |
-| FP8 KV with an explicit 10.3 GB reservation | 263,633-token cache capacity; **262,144-token native serving limit** | Final-layout 196,608 text and maximum-image boundaries passed; native cold completion remains unproven |
+| FP8 KV with an explicit 10.3 GB reservation | 263,633-token nominal cache; **262,144-token native server limit, 253,952-token proven usable limit** | Exact 253,824+128 completion passed; zero and 4K runtime reserves stalled on capacity, so clients keep 8K |
 
 The percentages above are deliberately not multiplied together: several rows
 use different controlled workloads. MTP4 also receives no invented standalone
@@ -111,7 +111,7 @@ finished. These bounded hypotheses remain, in priority order:
 2. **Prefix-cache eviction resilience.** A two-request 21–23K side conversation
    made a warm approximately 157K main session miss its entire usable prefix.
    Controlled A/Bs of positive GDN/Mamba retention intervals might turn that
-   catastrophic zero hit into bounded replay without reducing the 196,608-token
+   catastrophic zero hit into bounded replay without reducing the 253,952-token
    contract.
 3. **Cache-preserving OpenCode compaction.** One real 137,459-token compaction
    missed the complete warm prefix and took 443 seconds. A guarded side-by-side
@@ -175,7 +175,7 @@ it was explicitly stopped. LM Studio must not infer on the B70 concurrently.
 
 The selected overlay is `/srv/models/vllm/Frozenlock--Qwen3.8-27B-GPTQ-MTP-BF16`. Image, model revisions, generated hashes and runtime-patch hashes are pinned in [architecture.md](docs/architecture.md).
 
-The profile passed seven deterministic canaries, repeat stability, JSON/tool/code checks, comparison with the retained Unsloth GGUF reference, and a 30K needle retrieval. On 2026-09-02 the final prefix-cache and vision layout completed exact 196,480+128 text-only and maximum-image requests. The promoted 10.3 GB KV reservation reports 263,633 tokens for the model's native 262,144-token server limit. A cold 262,016+128 request ran for 1,800 seconds without OOM, restart or thermal failure but did not reach first token before the client timeout, so it is not recorded as a completed cold-boundary pass. OpenCode uses a 253,952-token input limit and an 8,192-token output reserve for incrementally cached agent sessions. These are bounded regression gates, not proof of universal equivalence.
+The profile passed seven deterministic canaries, repeat stability, JSON/tool/code checks, comparison with the retained Unsloth GGUF reference, and a 30K needle retrieval. On 2026-09-02 the final prefix-cache and vision layout completed exact 196,480+128 text-only and maximum-image requests. The promoted 10.3 GB KV reservation reports 263,633 nominal tokens for the model's native 262,144-token server limit. Empirical boundary work found that zero and 4,096-token runtime reserves eventually park at scheduler capacity, while an exact 253,824+128 request completed in 1,770.16 seconds with a 70°C peak and no error. OpenCode therefore uses a 253,952-token total context limit, a 245,760-token input limit and an 8,192-token output reserve for incrementally cached agent sessions. A controlled 196K-versus-262K server-profile A/B found no low-context TTFT, prefill or 512-token decode regression. These are bounded regression gates, not proof of universal equivalence.
 
 The planned Huihui abliterated candidate must match the base model's quality and performance before it can replace the resident model. See [huihui-plan.md](docs/huihui-plan.md).
 
