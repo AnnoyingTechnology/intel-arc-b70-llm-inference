@@ -12,7 +12,7 @@ curl -fsS http://127.0.0.1:19622/health
 curl -fsS http://127.0.0.1:19622/v1/models | jq '.data[] | {id, root, max_model_len}'
 ```
 
-Expected model ID: `qwen-3.8-27b`. Expected `max_model_len`: `196608`.
+Expected model ID: `qwen-3.8-27b`. Expected `max_model_len`: `262144`.
 Initial compilation can take roughly two minutes after the compile cache is
 empty.
 
@@ -76,6 +76,12 @@ but it cannot cure the upstream GDN NaN documented in
 Automatic tool selection is enabled server-side with vLLM's `qwen3_coder` parser. The parser matches this model's XML `<tool_call><function=...>` chat-template contract.
 
 Automatic prefix caching is enabled with SHA-256 keys and a 64-token prefix-match unit. Repeated conversations and tool-call follow-ups can reuse cached context inside the XPU hybrid cache's larger physical blocks; cold, unrelated prompts still pay normal prefill cost. Cache entries are in-memory and disappear when the service restarts.
+
+The workstation OpenCode profile advertises `context: 262144`,
+`input: 253952` and `output: 8192`. This reserves 8,192 tokens for generation
+while agent sessions grow incrementally through the prefix cache. Do not use a
+full cold-context request as a routine health check; use the short text and
+vision canaries instead.
 
 `--max-num-seqs 1 --performance-mode interactivity` is deliberate for this
 single-user service. It captures exact graph sizes 1–10, so MTP4's five-token

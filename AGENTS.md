@@ -20,7 +20,7 @@
 ## Optimization contract
 
 - Preserve target weights, target logits, KV precision, sampling semantics, and
-  the 196,608-token context contract.
+  the 262,144-token server context contract.
 - Pursue the highest-gain or lowest-effort candidates first. Require a credible
   and repeatable end-to-end gain of at least 3% on the target workload.
 - Auto-tuning is allowed, but use exact production shapes, unbiased cache and

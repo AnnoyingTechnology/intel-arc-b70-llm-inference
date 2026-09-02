@@ -5,8 +5,9 @@
 Qwen3.8-27B now accepts one image per OpenAI-compatible chat request while
 starting with the configured 196,608-token serving limit, the exact
 8,500,000,000-byte FP8 KV reservation, one sequence, MTP4 and every existing
-runtime patch. Video remains disabled. The exact 196,608-token boundary has not
-yet been repeated with the final prefix-cache and vision layout.
+runtime patch. Video remains disabled. At the time of enablement, the exact
+196,608-token boundary had not yet been repeated with the final prefix-cache
+and vision layout; it passed on 2026-09-02.
 
 The healthy engine reports 209,523 KV-cache tokens and 1.0656934306569343x
 maximum concurrency at 196,608 tokens. Loading the vision-capable model used
@@ -87,7 +88,11 @@ weights, logits, precision, sampler or generation policy changed.
 
 ## Follow-up milestone: current boundary and absolute stable ceiling
 
-Status: **pending**.
+Status: **partially completed on 2026-09-02**. Exact final-layout text and
+maximum-image requests completed at 196,608 tokens. The service was promoted to
+the native 262,144-token limit with 263,633 tokens of reported KV capacity, but
+the cold native-boundary request timed out before first token. See
+[`context-ceiling-probe-2026-09-02.md`](context-ceiling-probe-2026-09-02.md).
 
 Vision enablement proves that the former language-only configuration left
 enough non-KV device memory to load the 921,460,192-byte vision tensor payload
@@ -95,7 +100,7 @@ and its required runtime allocations while retaining the configured context
 limit and KV reservation. It does not prove completion at that boundary or
 establish the exact reusable remainder during a worst-case multimodal request.
 
-The current 8,500,000,000-byte KV setting reports capacity for 209,523 tokens,
+The vision-enable 8,500,000,000-byte KV setting reported capacity for 209,523 tokens,
 which is exactly 12,915 tokens beyond the 196,608-token serving limit. A simple
 proportional conversion suggests about 523.94 MB, but that is not an exact
 reclaimable-byte result: vLLM converts the byte budget into discrete cache

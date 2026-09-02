@@ -19,15 +19,23 @@
 - XPU graphs enabled; one request sequence; MTP with four speculative tokens.
 - `interactivity` performance mode captures exact graph sizes 1–10. This avoids
   padding MTP4's five-token verifier to the balanced profile's eight-row graph.
-- FP8 KV cache with an explicit 8,500,000,000-byte reservation.
-- Maximum model length: 196,608 tokens.
+- FP8 KV cache with an explicit 10,300,000,000-byte reservation.
+- Maximum model length: 262,144 tokens, matching the model's native limit.
 - Vision modules are loaded. Each request may contain at most one image; video
   inputs are disabled.
 - SHA-256 automatic prefix caching enabled for multi-round agent and tool-call workloads, with a 64-token match unit inside the XPU hybrid cache's larger physical blocks. The power sweep retained cold/fixed controls so historical numbers remain comparable.
 - Scheduler budget: 8,192 tokens. A 16,384-token 100K-prefill A/B regressed both TTFT and energy efficiency.
 - The persistent Compose volume `b70-vllm-cache` retains compiled graphs.
 
-With prefix caching and aligned hybrid-cache pages, the engine reports 209,523 tokens of KV capacity and 1.07x maximum concurrency at the configured 196,608-token contract. The earlier 214,214-token figure and exact 196,480+128 boundary completion were measured before prefix caching changed the cache layout. At the user's direction, that five-minute mechanical request was not repeated; current capacity headroom is observed, while exact-boundary completion under the final cache mode remains unverified. A cold-cache recreation completed its two main compilation phases in about 58 and 14 seconds.
+With prefix caching and aligned hybrid-cache pages, the promoted engine reports
+263,633 tokens of KV capacity and 1.01x maximum concurrency at the native
+262,144-token limit. The final layout completed exact 196,480+128 text and
+maximum-image requests. A cold 262,016+128 request remained memory- and
+thermally stable for 1,800 seconds but timed out before first token, so native
+cold completion remains unverified. Production OpenCode clients use 253,952
+input tokens plus an 8,192-token output reserve and rely on prefix-cache growth
+across agent turns. See
+[`context-ceiling-probe-2026-09-02.md`](context-ceiling-probe-2026-09-02.md).
 
 ## Target model
 

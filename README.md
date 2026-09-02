@@ -64,7 +64,7 @@ graph overhead.
 | Exact five-row single-user MTP graph | 84.60 → 85.61 tok/s, **+1.19%** | Removes graph padding only |
 | Contained oneDNN W4A16 32x64 selector for four exact prefill projections | 8K TTFT **-5.68%**; 32K **-6.73%** | Six production-shape output tensors bit-identical |
 | Seven-point power-cap sweep selecting 210 W | **-11.6% decode energy/token** while retaining 98.6% of 275 W decode | Same model and workload at every cap |
-| FP8 KV with an explicit 8.5 GB reservation | 209,523-token cache capacity; **196,608-token serving contract** | Exact boundary passed before the final prefix-cache/vision layout; current-layout and ceiling probes pending |
+| FP8 KV with an explicit 10.3 GB reservation | 263,633-token cache capacity; **262,144-token native serving limit** | Final-layout 196,608 text and maximum-image boundaries passed; native cold completion remains unproven |
 
 The percentages above are deliberately not multiplied together: several rows
 use different controlled workloads. MTP4 also receives no invented standalone
@@ -175,7 +175,7 @@ it was explicitly stopped. LM Studio must not infer on the B70 concurrently.
 
 The selected overlay is `/srv/models/vllm/Frozenlock--Qwen3.8-27B-GPTQ-MTP-BF16`. Image, model revisions, generated hashes and runtime-patch hashes are pinned in [architecture.md](docs/architecture.md).
 
-The profile passed seven deterministic canaries, repeat stability, JSON/tool/code checks, comparison with the retained Unsloth GGUF reference, and a 30K needle retrieval. The same target and 8.5 GB KV reservation passed an exact 196,608-token mechanical boundary before prefix caching changed the hybrid page layout; the final runtime reports 209,523-token capacity, but that expensive boundary request was not repeated. These are bounded regression gates, not proof of universal equivalence.
+The profile passed seven deterministic canaries, repeat stability, JSON/tool/code checks, comparison with the retained Unsloth GGUF reference, and a 30K needle retrieval. On 2026-09-02 the final prefix-cache and vision layout completed exact 196,480+128 text-only and maximum-image requests. The promoted 10.3 GB KV reservation reports 263,633 tokens for the model's native 262,144-token server limit. A cold 262,016+128 request ran for 1,800 seconds without OOM, restart or thermal failure but did not reach first token before the client timeout, so it is not recorded as a completed cold-boundary pass. OpenCode uses a 253,952-token input limit and an 8,192-token output reserve for incrementally cached agent sessions. These are bounded regression gates, not proof of universal equivalence.
 
 The planned Huihui abliterated candidate must match the base model's quality and performance before it can replace the resident model. See [huihui-plan.md](docs/huihui-plan.md).
 

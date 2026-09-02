@@ -68,8 +68,8 @@ services:
         --port 8000
         --quantization gptq
         --dtype float16
-        --max-model-len 196608
-        --kv-cache-memory 8500000000
+        --max-model-len 262144
+        --kv-cache-memory 10300000000
         --kv-cache-dtype fp8
         --max-num-seqs 1
         --performance-mode interactivity

@@ -32,11 +32,18 @@ Controlled results placed the same Unsloth GGUF at 12.02 tok/s without MTP, 16.4
 
 ## Context sizing
 
-The earlier 100K setting was a conservative untested cap, not a hardware limit. The service now explicitly reserves 8.5 billion bytes for FP8 KV. Before prefix caching, the engine reported 214,214 tokens and completed the exact 196,608-token boundary; the final cache layout reports 209,523 tokens of capacity.
+The earlier 100K and 196,608 settings were conservative serving caps, not the
+model limit. The service now reserves exactly 10,300,000,000 bytes for FP8 KV;
+the final prefix-cache and vision layout reports 263,633 tokens of capacity at
+the model's native 262,144-token limit.
 
-The model advertises 262,144 native tokens. That boundary was not selected because its projected KV requirement is about 10.8 GiB, while only roughly 8–9 GiB can safely remain after weights, draft structures, graphs and runtime allocations. Reaching native context would require a separately tested memory reduction or offload path; do not increase `--max-model-len` based only on model metadata.
-
-With automatic prefix caching, hybrid GDN/attention page alignment changes reported capacity from the earlier 214,214 tokens to 209,523. This remains above the configured 196,608 window, but capacity figures must always be read from the final runtime configuration rather than copied across cache modes.
+Do not confuse allocation success with cold-request usability. Exact 196,608
+text and maximum-image requests completed on the final layout, while a cold
+262,144-total request remained healthy for 1,800 seconds but did not reach its
+first token before timeout. The production client therefore reserves 8,192
+tokens for output and relies on normal incremental agent growth and prefix
+caching. Capacity figures must always be read from the final runtime rather
+than projected proportionally across cache layouts.
 
 ## Prefill lessons
 

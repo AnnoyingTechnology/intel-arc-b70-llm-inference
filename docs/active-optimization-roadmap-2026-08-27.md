@@ -6,7 +6,7 @@ Status: **actively pursuing**.
 
 - Optimize the established single-user Qwen3.8-27B MTP4 service at 210 W.
 - Do not change target weights, target logits, KV precision, sampling semantics
-  or the 196,608-token context contract.
+  or the 262,144-token server context contract.
 - Promote only a repeatable end-to-end gain of at least 3% on the workload the
   change targets, with correctness, quality, energy and neighboring-shape gates.
 - Drop sub-3% changes after recording the result. Do not compound marginal
