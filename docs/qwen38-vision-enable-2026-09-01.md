@@ -84,6 +84,73 @@ After the run the container was healthy, had zero restarts, was not OOM-killed,
 and reported no request-time errors. No output-quality gate was run because no
 weights, logits, precision, sampler or generation policy changed.
 
+## Follow-up milestone: exact multimodal VRAM envelope
+
+Status: **pending**.
+
+Vision enablement proves that the former language-only configuration left
+enough non-KV device memory to load the 921,460,192-byte vision tensor payload
+and its required runtime allocations without reducing the context contract or
+the KV reservation. It does not yet establish the exact reusable remainder
+during a worst-case multimodal request.
+
+The current 8,500,000,000-byte KV setting reports capacity for 209,523 tokens,
+which is exactly 12,915 tokens beyond the 196,608-token serving limit. A simple
+proportional conversion suggests about 523.94 MB, but that is not an exact
+reclaimable-byte result: vLLM converts the byte budget into discrete cache
+blocks and may round the realized allocation. Do not promote that estimate into
+configuration.
+
+The ten-file validation reached 12,740 image tokens, but did not combine the
+largest supported image workload with a near-limit text sequence. Startup
+figures and rounded `xpu-smi` output are also insufficient to identify a safe
+production boundary.
+
+### Question to settle
+
+Determine empirically, to the last demonstrated stable byte, the memory
+envelope for one-image inference at the full 196,608-token contract. Then
+decide deliberately whether any confirmed remainder should remain transient
+headroom, increase KV capacity for prefix-cache retention and shorter-request
+concurrency, or support a larger multimodal limit.
+
+### Fixed contract
+
+- Never reduce `--max-model-len 196608` for this work.
+- Preserve model weights, target logits, FP8 KV precision, sampling semantics,
+  MTP4, the single-sequence contract, and the established power policy.
+- Change one explicit memory control at a time and record its exact byte value.
+- Do not infer an accepted setting from nominal VRAM, rounded utilization, or a
+  proportional tokens-to-bytes calculation.
+- Treat increasing the number of images or encoder-cache budget as a separate
+  serving-contract decision, not as an incidental memory tweak.
+
+### Empirical procedure
+
+1. Capture the current configuration, engine-reported KV capacity, allocator
+   state, device-memory telemetry, container restart/OOM state, and cold-start
+   high-water mark as the baseline.
+2. Exercise the largest supported image shape and tokenization together with a
+   near-limit sequence, then decode far enough to expose steady-state and
+   transient allocations. Cover cold and warm prefix-cache states.
+3. Search exact `--kv-cache-memory` byte values with a bounded bracketed search;
+   do not guess by reducing the context limit. Repeat cold engine starts and
+   the worst-case request at each candidate because initialization success
+   alone is not stability evidence.
+4. Record the lowest demonstrated failing byte value and highest repeatedly
+   stable byte value, including the failure mode, measured high-water behavior,
+   and cache-block count.
+5. Promote nothing until the production container remains healthy with no OOM,
+   restart, request error, or output-canary regression. A full output-quality
+   suite is unnecessary unless a later experiment changes numerical or
+   generation semantics.
+
+Keep raw measurements outside Git when large, and summarize the exact commands,
+inputs, repetitions, boundary, and artifact paths here or in a dated companion
+report.
+
 ## Rollback
 
-Restore image `b70-vllm-latest-xpu:a397c58-head256-k64-prefill64` and replace
+Restore image `b70-vllm-latest-xpu:a397c58-head256-k64-prefill64`, replace the
+multimodal limit with `--language-model-only`, recreate the service, and verify
+the health endpoint plus a text-only canary.
