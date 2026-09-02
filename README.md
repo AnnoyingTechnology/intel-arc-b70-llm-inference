@@ -142,6 +142,94 @@ curl -fsS http://127.0.0.1:19622/health
 docker compose logs -f --tail=100
 ```
 
+## Production vLLM invocation
+
+Compose starts the pinned image and ultimately executes this command:
+
+```bash
+vllm serve /models/Frozenlock--Qwen3.8-27B-GPTQ-MTP-BF16 \
+  --host 0.0.0.0 \
+  --port 8000 \
+  --quantization gptq \
+  --dtype float16 \
+  --max-model-len 262144 \
+  --kv-cache-memory 10300000000 \
+  --kv-cache-dtype fp8 \
+  --max-num-seqs 1 \
+  --performance-mode interactivity \
+  --max-num-batched-tokens 8192 \
+  --enable-prefix-caching \
+  --prefix-caching-hash-algo sha256 \
+  --prefix-match-unit 64 \
+  --enable-prompt-tokens-details \
+  --served-model-name qwen-3.8-27b \
+  --limit-mm-per-prompt '{"image":1,"video":0}' \
+  --reasoning-parser qwen3 \
+  --enable-auto-tool-choice \
+  --tool-call-parser qwen3_coder \
+  --generation-config vllm \
+  --speculative-config '{"method":"mtp","num_speculative_tokens":4}'
+```
+
+Model and memory settings:
+
+| Setting | Purpose |
+|---|---|
+| Model path | Read-only GPTQ target overlay with its compatible MTP sidecar. |
+| `--quantization gptq` | Selects the working Intel XPU W4A16 path for the target's AutoRound/GPTQ-compatible packing. |
+| `--dtype float16` | Uses FP16 for non-quantized runtime paths; the target body remains INT4 and the draft is handled by the runtime patches. |
+| `--max-model-len 262144` | Exposes the native server context. Production clients use the proven 253,952-token total window: 245,760 input plus 8,192 output. |
+| `--kv-cache-memory 10300000000` | Reserves 10.3 GB decimal, approximately 9.59 GiB, for KV; the engine reports 263,633-token capacity. |
+| `--kv-cache-dtype fp8` | Reduces KV storage enough to support the long-context contract. |
+
+Scheduling and agent-session settings:
+
+| Setting | Purpose |
+|---|---|
+| `--max-num-seqs 1` | Optimizes for one active single-user agent request rather than concurrent throughput. |
+| `--performance-mode interactivity` | Captures exact graph sizes 1–10, avoiding padding MTP4's five-token verifier to eight rows. |
+| `--max-num-batched-tokens 8192` | Uses the validated 8K scheduler/prefill budget; 16K regressed TTFT and energy efficiency. |
+| `--speculative-config ... MTP4` | Proposes up to four draft tokens per step; the unchanged target verifies every emitted token. |
+| `--enable-prefix-caching` | Reuses unchanged conversation prefixes as agent sessions grow. |
+| `--prefix-caching-hash-algo sha256` | Uses stable SHA-256 prefix-cache keys. |
+| `--prefix-match-unit 64` | Permits reuse at 64-token boundaries inside the XPU hybrid-cache layout. |
+| `--enable-prompt-tokens-details` | Returns detailed prompt and cached-token accounting in API usage data. |
+
+API settings:
+
+| Setting | Purpose |
+|---|---|
+| `--host 0.0.0.0 --port 8000` | Listens inside the container; Compose publishes host TCP 19622. |
+| `--served-model-name qwen-3.8-27b` | Provides the stable client-facing model ID. |
+| `--limit-mm-per-prompt ...` | Allows one image per request and disables video. |
+| `--reasoning-parser qwen3` | Separates Qwen reasoning from final answer content. |
+| `--enable-auto-tool-choice` | Allows the model to decide whether to call a supplied tool. |
+| `--tool-call-parser qwen3_coder` | Parses the model's native tool-call format. |
+| `--generation-config vllm` | Uses vLLM defaults instead of silently importing sampling defaults from the model repository. |
+
+The shell wrapper uses `set -e`, creates the PCI-addressed DRI links expected
+by the runtime, applies the seven pinned and idempotent runtime patches, then
+uses `exec` so vLLM receives Docker's signals directly. Its material environment
+controls are:
+
+| Setting | Purpose |
+|---|---|
+| `B70_MTP_BF16_DRAFT=1` | Builds the MTP sidecar without applying target GPTQ quantization to it. |
+| `B70_DRAFT_LMHEAD_INT4=1` | Quantizes only the draft LM-head copy to symmetric INT4 G128. |
+| `B70_DRAFT_MTP_INT4=1` | Quantizes the five draft MTP linears to symmetric INT4 G128. |
+| `B70_GDN_PROMPT_PADDING=0` | Keeps the superseded padding workaround disabled; the validated prefill/decode classifier fix is active. |
+| `VLLM_XPU_ENABLE_XPU_GRAPH=1` | Enables Intel XPU graph capture. |
+| `VLLM_USE_BREAKABLE_CUDAGRAPH=0` | Selects the validated non-breakable graph behavior in the pinned build. |
+| `PYTORCH_ALLOC_CONF=expandable_segments:True` | Reduces allocator fragmentation. |
+| `HF_HUB_OFFLINE=1`, `TRANSFORMERS_OFFLINE=1` | Prevent runtime model downloads. |
+| `ONEAPI_DEVICE_SELECTOR=level_zero:gpu`, `ZE_AFFINITY_MASK=0`, `VLLM_TARGET_DEVICE=xpu` | Bind the runtime to the B70 through Level Zero. |
+| `VLLM_WORKER_MULTIPROC_METHOD=spawn` | Uses accelerator-safe worker initialization. |
+
+Docker drops all Linux capabilities, enables `no-new-privileges`, mounts model
+and patch inputs read-only, limits the PID count and restarts the service with
+`unless-stopped`. The API itself is unauthenticated and published on
+`0.0.0.0:19622`, so its production access boundary is the host firewall.
+
 Power-cap state:
 
 ```bash
