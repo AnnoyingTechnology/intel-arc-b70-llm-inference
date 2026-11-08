@@ -1,0 +1,572 @@
+{
+  "protocol": "frozen-six-family-512-output-and-cold-8k-32k-v1",
+  "power_polling": false,
+  "namespace": "update-20261108-a",
+  "rows": [
+    {
+      "input_sha256": "3f56cb45f7ce422da28ae4b51b5b478a9635c6bbfd857bcc93bbfb30793cc69d",
+      "output_sha256": "09e41168c1b8b255018ca2ea7ae3af73f55db3850c830437d65dec2d1660ef4b",
+      "usage": {
+        "prompt_tokens": 476,
+        "total_tokens": 988,
+        "completion_tokens": 512,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "created_cache_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      },
+      "finish_reason": "length",
+      "ttft_s": 1.1236905129626393,
+      "total_s": 7.241071431897581,
+      "decode_s": 6.117305074818432,
+      "decode_tok_s": 83.53351578025836,
+      "prefill_tok_s": 423.60418149746016,
+      "metrics": {},
+      "energy_total_j": 1457.282653,
+      "energy_decode_j": 1286.975158,
+      "host_available_gib_after": 53.8175163269043,
+      "kind": "decode",
+      "family": "assistant",
+      "index": 0,
+      "multiplier": 1,
+      "repeat": 0
+    },
+    {
+      "input_sha256": "0d6ad247261b201e63ed701818e629eb0a987fa295dbb5fa6d59c8995b275bb8",
+      "output_sha256": "af4fcb96578ad02d20556fec5c752a9ab685c9bec90edd3b7aa33309f9150907",
+      "usage": {
+        "prompt_tokens": 476,
+        "total_tokens": 988,
+        "completion_tokens": 512,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "created_cache_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      },
+      "finish_reason": "length",
+      "ttft_s": 0.38244933634996414,
+      "total_s": 6.172717905603349,
+      "decode_s": 5.79019723366946,
+      "decode_tok_s": 88.25260684188483,
+      "prefill_tok_s": 1244.6092979082368,
+      "metrics": {},
+      "energy_total_j": 1296.110107,
+      "energy_decode_j": 1208.091918,
+      "host_available_gib_after": 53.8797721862793,
+      "kind": "decode",
+      "family": "research",
+      "index": 1,
+      "multiplier": 1,
+      "repeat": 0
+    },
+    {
+      "input_sha256": "b365ec1182f64e05f0a9a23c22ef1621556c8e46cc744ecc40cd9bf86dd318ad",
+      "output_sha256": "be342955f2e9431dd05d130026812c302b964eb5685b6dc6e6ad7bd97c275ff9",
+      "usage": {
+        "prompt_tokens": 476,
+        "total_tokens": 988,
+        "completion_tokens": 512,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "created_cache_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      },
+      "finish_reason": "length",
+      "ttft_s": 0.3816594770178199,
+      "total_s": 5.39381331205368,
+      "decode_s": 5.012086927890778,
+      "decode_tok_s": 101.95353898521522,
+      "prefill_tok_s": 1247.185065910928,
+      "metrics": {},
+      "energy_total_j": 1132.974671,
+      "energy_decode_j": 1044.811096,
+      "host_available_gib_after": 53.89978790283203,
+      "kind": "decode",
+      "family": "rag",
+      "index": 2,
+      "multiplier": 1,
+      "repeat": 0
+    },
+    {
+      "input_sha256": "49514640ae63b21cc4894d9356c55eafde9f9c565aa574a82258a6858b645354",
+      "output_sha256": "111e5ca9410587de807087c2be7ebe01bfe937afb69ea05f26eec64f1b45ce04",
+      "usage": {
+        "prompt_tokens": 476,
+        "total_tokens": 988,
+        "completion_tokens": 512,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "created_cache_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      },
+      "finish_reason": "length",
+      "ttft_s": 0.38247795682400465,
+      "total_s": 7.247611124068499,
+      "decode_s": 6.865057773888111,
+      "decode_tok_s": 74.43491618433806,
+      "prefill_tok_s": 1244.5161649381773,
+      "metrics": {},
+      "energy_total_j": 1522.076111,
+      "energy_decode_j": 1433.443176,
+      "host_available_gib_after": 53.92826461791992,
+      "kind": "decode",
+      "family": "tool",
+      "index": 3,
+      "multiplier": 1,
+      "repeat": 0
+    },
+    {
+      "input_sha256": "cd74bebda7bfe4e6a2ce5ec02e2291a7b6cfa496d89cfbc22f7690686fd2e377",
+      "output_sha256": "112a275dd97cbefd17a8caead0cdb3101dd968dbc42c54069239120b00b050d1",
+      "usage": {
+        "prompt_tokens": 476,
+        "total_tokens": 988,
+        "completion_tokens": 512,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "created_cache_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      },
+      "finish_reason": "length",
+      "ttft_s": 0.3833968658000231,
+      "total_s": 7.750770746730268,
+      "decode_s": 7.367304350249469,
+      "decode_tok_s": 69.36051175660968,
+      "prefill_tok_s": 1241.5333625817327,
+      "metrics": {},
+      "energy_total_j": 1628.9375,
+      "energy_decode_j": 1540.021118,
+      "host_available_gib_after": 53.926361083984375,
+      "kind": "decode",
+      "family": "document",
+      "index": 4,
+      "multiplier": 1,
+      "repeat": 0
+    },
+    {
+      "input_sha256": "2a99726efc072c1132e3f61fd3c38562a49a96b20dc9f3deb0679c02c7a483ac",
+      "output_sha256": "f4c65e5e0ec0046e9f41151c6dd1c43cc57d5c218e5bae7a9c27de1d1885ee76",
+      "usage": {
+        "prompt_tokens": 476,
+        "total_tokens": 988,
+        "completion_tokens": 512,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "created_cache_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      },
+      "finish_reason": "length",
+      "ttft_s": 0.38400798197835684,
+      "total_s": 6.8071748074144125,
+      "decode_s": 6.42309080157429,
+      "decode_tok_s": 79.55671432743169,
+      "prefill_tok_s": 1239.5575673914714,
+      "metrics": {},
+      "energy_total_j": 1429.694275,
+      "energy_decode_j": 1341.396729,
+      "host_available_gib_after": 53.917572021484375,
+      "kind": "decode",
+      "family": "assistant",
+      "index": 5,
+      "multiplier": 1,
+      "repeat": 0
+    },
+    {
+      "input_sha256": "2a99726efc072c1132e3f61fd3c38562a49a96b20dc9f3deb0679c02c7a483ac",
+      "output_sha256": "f4c65e5e0ec0046e9f41151c6dd1c43cc57d5c218e5bae7a9c27de1d1885ee76",
+      "usage": {
+        "prompt_tokens": 476,
+        "total_tokens": 988,
+        "completion_tokens": 512,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "created_cache_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      },
+      "finish_reason": "length",
+      "ttft_s": 0.38485382217913866,
+      "total_s": 6.846873389557004,
+      "decode_s": 6.461936770938337,
+      "decode_tok_s": 79.07845869030344,
+      "prefill_tok_s": 1236.8332404879568,
+      "metrics": {},
+      "energy_total_j": 1438.290588,
+      "energy_decode_j": 1349.664001,
+      "host_available_gib_after": 53.91489791870117,
+      "kind": "decode",
+      "family": "assistant",
+      "index": 5,
+      "multiplier": 1,
+      "repeat": 1
+    },
+    {
+      "input_sha256": "cd74bebda7bfe4e6a2ce5ec02e2291a7b6cfa496d89cfbc22f7690686fd2e377",
+      "output_sha256": "7955ae58ba2789030cf1f7769ea796450efc06dfa9ecde345390da6f37c5ac81",
+      "usage": {
+        "prompt_tokens": 476,
+        "total_tokens": 988,
+        "completion_tokens": 512,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "created_cache_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      },
+      "finish_reason": "length",
+      "ttft_s": 0.38587390445172787,
+      "total_s": 6.643528465181589,
+      "decode_s": 6.257582583464682,
+      "decode_tok_s": 81.66092787177742,
+      "prefill_tok_s": 1233.5635929471016,
+      "metrics": {},
+      "energy_total_j": 1395.138977,
+      "energy_decode_j": 1306.602234,
+      "host_available_gib_after": 53.91489791870117,
+      "kind": "decode",
+      "family": "document",
+      "index": 4,
+      "multiplier": 1,
+      "repeat": 1
+    },
+    {
+      "input_sha256": "49514640ae63b21cc4894d9356c55eafde9f9c565aa574a82258a6858b645354",
+      "output_sha256": "ff97e7c1a6f07f30c50c303491d7abb4803a8fe3b760f07e23d3648d54cbd32d",
+      "usage": {
+        "prompt_tokens": 476,
+        "total_tokens": 988,
+        "completion_tokens": 512,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "created_cache_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      },
+      "finish_reason": "length",
+      "ttft_s": 0.3863039053976536,
+      "total_s": 7.386705491691828,
+      "decode_s": 7.000332726165652,
+      "decode_tok_s": 72.99653030633789,
+      "prefill_tok_s": 1232.1904939325298,
+      "metrics": {},
+      "energy_total_j": 1551.271241,
+      "energy_decode_j": 1462.695618,
+      "host_available_gib_after": 53.90816879272461,
+      "kind": "decode",
+      "family": "tool",
+      "index": 3,
+      "multiplier": 1,
+      "repeat": 1
+    },
+    {
+      "input_sha256": "b365ec1182f64e05f0a9a23c22ef1621556c8e46cc744ecc40cd9bf86dd318ad",
+      "output_sha256": "be342955f2e9431dd05d130026812c302b964eb5685b6dc6e6ad7bd97c275ff9",
+      "usage": {
+        "prompt_tokens": 476,
+        "total_tokens": 988,
+        "completion_tokens": 512,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "created_cache_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      },
+      "finish_reason": "length",
+      "ttft_s": 0.38666127249598503,
+      "total_s": 5.441788935102522,
+      "decode_s": 5.055061026476324,
+      "decode_tok_s": 101.08681128152418,
+      "prefill_tok_s": 1231.051656472637,
+      "metrics": {},
+      "energy_total_j": 1142.720581,
+      "energy_decode_j": 1053.645691,
+      "host_available_gib_after": 53.906455993652344,
+      "kind": "decode",
+      "family": "rag",
+      "index": 2,
+      "multiplier": 1,
+      "repeat": 1
+    },
+    {
+      "input_sha256": "0d6ad247261b201e63ed701818e629eb0a987fa295dbb5fa6d59c8995b275bb8",
+      "output_sha256": "5a43008c8e112c2040ec62ad87bf8a045c73bfc988913c04a47a632330ba9e15",
+      "usage": {
+        "prompt_tokens": 476,
+        "total_tokens": 988,
+        "completion_tokens": 512,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "created_cache_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      },
+      "finish_reason": "length",
+      "ttft_s": 0.3854945208877325,
+      "total_s": 6.434656823053956,
+      "decode_s": 6.04908188059926,
+      "decode_tok_s": 84.47562953956529,
+      "prefill_tok_s": 1234.7776017771869,
+      "metrics": {},
+      "energy_total_j": 1351.59906,
+      "energy_decode_j": 1262.836792,
+      "host_available_gib_after": 53.925331115722656,
+      "kind": "decode",
+      "family": "research",
+      "index": 1,
+      "multiplier": 1,
+      "repeat": 1
+    },
+    {
+      "input_sha256": "3f56cb45f7ce422da28ae4b51b5b478a9635c6bbfd857bcc93bbfb30793cc69d",
+      "output_sha256": "09e41168c1b8b255018ca2ea7ae3af73f55db3850c830437d65dec2d1660ef4b",
+      "usage": {
+        "prompt_tokens": 476,
+        "total_tokens": 988,
+        "completion_tokens": 512,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "created_cache_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      },
+      "finish_reason": "length",
+      "ttft_s": 0.3863672334700823,
+      "total_s": 6.560136655345559,
+      "decode_s": 6.173699508421123,
+      "decode_tok_s": 82.77046838819733,
+      "prefill_tok_s": 1231.988529992304,
+      "metrics": {},
+      "energy_total_j": 1377.982117,
+      "energy_decode_j": 1289.302246,
+      "host_available_gib_after": 53.9240608215332,
+      "kind": "decode",
+      "family": "assistant",
+      "index": 0,
+      "multiplier": 1,
+      "repeat": 1
+    },
+    {
+      "input_sha256": "cf227589734ad1d3b32e429489255d0c167c733fbec1ae3fbc176ad81667661e",
+      "output_sha256": "193c08d1b3f162e64f35fb593c371824628918e68f716358cf13357b15f4bc0d",
+      "usage": {
+        "prompt_tokens": 8156,
+        "total_tokens": 8164,
+        "completion_tokens": 8,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "created_cache_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      },
+      "finish_reason": "length",
+      "ttft_s": 5.076308763585985,
+      "total_s": 5.25655590929091,
+      "decode_s": 0.18016229569911957,
+      "decode_tok_s": 38.85385658989584,
+      "prefill_tok_s": 1606.6792584615112,
+      "metrics": {},
+      "energy_total_j": 1074.152343,
+      "energy_decode_j": 34.232055,
+      "host_available_gib_after": 53.85163497924805,
+      "kind": "prefill",
+      "family": "assistant",
+      "index": 0,
+      "multiplier": 1,
+      "repeat": 0
+    },
+    {
+      "input_sha256": "cf227589734ad1d3b32e429489255d0c167c733fbec1ae3fbc176ad81667661e",
+      "output_sha256": "193c08d1b3f162e64f35fb593c371824628918e68f716358cf13357b15f4bc0d",
+      "usage": {
+        "prompt_tokens": 8156,
+        "total_tokens": 8164,
+        "completion_tokens": 8,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "created_cache_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      },
+      "finish_reason": "length",
+      "ttft_s": 4.897508279420435,
+      "total_s": 5.077665423043072,
+      "decode_s": 0.18008385412395,
+      "decode_tok_s": 38.870780692987424,
+      "prefill_tok_s": 1665.3366435891294,
+      "metrics": {},
+      "energy_total_j": 1065.932922,
+      "energy_decode_j": 33.935119,
+      "host_available_gib_after": 53.8540153503418,
+      "kind": "prefill",
+      "family": "assistant",
+      "index": 0,
+      "multiplier": 1,
+      "repeat": 1
+    },
+    {
+      "input_sha256": "cf227589734ad1d3b32e429489255d0c167c733fbec1ae3fbc176ad81667661e",
+      "output_sha256": "193c08d1b3f162e64f35fb593c371824628918e68f716358cf13357b15f4bc0d",
+      "usage": {
+        "prompt_tokens": 8156,
+        "total_tokens": 8164,
+        "completion_tokens": 8,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "created_cache_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      },
+      "finish_reason": "length",
+      "ttft_s": 4.894951334223151,
+      "total_s": 5.075231720693409,
+      "decode_s": 0.1801943937316537,
+      "decode_tok_s": 38.84693555130484,
+      "prefill_tok_s": 1666.206555104473,
+      "metrics": {},
+      "energy_total_j": 1066.68811,
+      "energy_decode_j": 33.820984,
+      "host_available_gib_after": 53.8545036315918,
+      "kind": "prefill",
+      "family": "assistant",
+      "index": 0,
+      "multiplier": 1,
+      "repeat": 2
+    },
+    {
+      "input_sha256": "b761611b4cbbe7725fb04f57344a1b8b1c4ab534e330f980b22dad359196256f",
+      "output_sha256": "193c08d1b3f162e64f35fb593c371824628918e68f716358cf13357b15f4bc0d",
+      "usage": {
+        "prompt_tokens": 32531,
+        "total_tokens": 32539,
+        "completion_tokens": 8,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "created_cache_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      },
+      "finish_reason": "length",
+      "ttft_s": 22.791255521588027,
+      "total_s": 22.933563760481775,
+      "decode_s": 0.1422338280826807,
+      "decode_tok_s": 49.21473389530718,
+      "prefill_tok_s": 1427.345675150999,
+      "metrics": {},
+      "energy_total_j": 4812.366577,
+      "energy_decode_j": 30.011475,
+      "host_available_gib_after": 53.8018913269043,
+      "kind": "prefill",
+      "family": "assistant",
+      "index": 0,
+      "multiplier": 4,
+      "repeat": 0
+    },
+    {
+      "input_sha256": "b761611b4cbbe7725fb04f57344a1b8b1c4ab534e330f980b22dad359196256f",
+      "output_sha256": "193c08d1b3f162e64f35fb593c371824628918e68f716358cf13357b15f4bc0d",
+      "usage": {
+        "prompt_tokens": 32531,
+        "total_tokens": 32539,
+        "completion_tokens": 8,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "created_cache_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      },
+      "finish_reason": "length",
+      "ttft_s": 22.764419740997255,
+      "total_s": 22.90728895086795,
+      "decode_s": 0.14278032165020704,
+      "decode_tok_s": 49.02636385109901,
+      "prefill_tok_s": 1429.02829811268,
+      "metrics": {},
+      "energy_total_j": 4805.544189,
+      "energy_decode_j": 29.374328,
+      "host_available_gib_after": 53.81396484375,
+      "kind": "prefill",
+      "family": "assistant",
+      "index": 0,
+      "multiplier": 4,
+      "repeat": 1
+    },
+    {
+      "input_sha256": "b761611b4cbbe7725fb04f57344a1b8b1c4ab534e330f980b22dad359196256f",
+      "output_sha256": "193c08d1b3f162e64f35fb593c371824628918e68f716358cf13357b15f4bc0d",
+      "usage": {
+        "prompt_tokens": 32531,
+        "total_tokens": 32539,
+        "completion_tokens": 8,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "created_cache_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      },
+      "finish_reason": "length",
+      "ttft_s": 22.772928681224585,
+      "total_s": 22.915877209044993,
+      "decode_s": 0.14287189301103354,
+      "decode_tok_s": 48.99494121954003,
+      "prefill_tok_s": 1428.4943520163297,
+      "metrics": {},
+      "energy_total_j": 4806.095093,
+      "energy_decode_j": 29.345642,
+      "host_available_gib_after": 53.81475830078125,
+      "kind": "prefill",
+      "family": "assistant",
+      "index": 0,
+      "multiplier": 4,
+      "repeat": 2
+    }
+  ],
+  "summary": {
+    "decode_median_tok_s": 82.21569812998737,
+    "prefill_median_tok_s": {
+      "1": 1665.3366435891294,
+      "4": 1428.4943520163297
+    }
+  }
+}

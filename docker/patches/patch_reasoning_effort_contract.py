@@ -165,9 +165,12 @@ def main() -> None:
         RESPONSES_CLASS_REPLACEMENT,
         "Responses Reasoning class",
     )
+    anthropic_old = ANTHROPIC_FIELD_OLD
+    if anthropic_old not in anthropic_text:
+        anthropic_old = "    effort: AnthropicEffort | None = None\n"
     anthropic_text = replace_once(
         anthropic_text,
-        ANTHROPIC_FIELD_OLD,
+        anthropic_old,
         ANTHROPIC_FIELD_NEW,
         "Anthropic output_config effort field",
     )

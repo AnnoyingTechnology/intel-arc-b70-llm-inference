@@ -16,6 +16,11 @@ end-to-end, energy or correctness gates. The reproducible result uses a
 transparent INT4 target, MTP4, FP8 KV, automatic prefix caching and a persisted
 210 W efficiency cap.
 
+
+The [2026-11-08 update qualification](updates/2026-11-08/README.md) rejected
+stock vLLM 0.32 and MTP3/MTP5: none improved the tuned service sufficiently.
+The selected MTP4 deployment is retained.
+
 ## Result
 
 The validated patched service exposes `qwen-3.8-27b` on port `19622` on every host

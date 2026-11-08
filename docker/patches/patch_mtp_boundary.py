@@ -99,12 +99,35 @@ NEW_FINALIZE = '''            if spec_sequence_masks_cpu is not None:
 def patch_text(text: str) -> str:
     if MARKER in text:
         return text
-    if text.count(OLD) != 1:
+    old, new = OLD, NEW
+    old_finalize, new_finalize = OLD_FINALIZE, NEW_FINALIZE
+    # v0.32 replaces the pure-spec mask gather with an equivalent leading slice.
+    if old not in text:
+        old = old.replace(
+            '# Filter by spec_sequence_masks to exclude padded sequences',
+            '# Padded sequences trail the spec decodes, so slice them off\n'
+            '                # rather than gather with the host mask (an H2D copy + a kernel).'
+        ).replace('spec_sequence_masks_cpu, : self.num_spec + 1',
+                  ':num_spec_decodes, : self.num_spec + 1')
+        new = new.replace('spec_sequence_masks_cpu, : self.num_spec + 1',
+                          ':num_spec_decodes, : self.num_spec + 1')
+        old_finalize = ("            assert num_accepted_tokens is not None\n"
+                        "            if num_prefills == 0 and num_decodes == 0:\n"
+                        "                num_accepted_tokens = num_accepted_tokens[:num_spec_decodes]\n"
+                        "            else:\n"
+                        "                num_accepted_tokens = num_accepted_tokens[spec_sequence_masks_cpu]\n")
+        new_finalize = ("            if spec_sequence_masks_cpu is not None:\n"
+                        "                assert num_accepted_tokens is not None\n"
+                        "                if num_prefills == 0 and num_decodes == 0:\n"
+                        "                    num_accepted_tokens = num_accepted_tokens[:num_spec_decodes]\n"
+                        "                else:\n"
+                        "                    num_accepted_tokens = num_accepted_tokens[spec_sequence_masks_cpu]\n")
+    if text.count(old) != 1:
         raise RuntimeError("GDN pure-spec anchor changed; refusing to patch")
-    if text.count(OLD_FINALIZE) != 1:
+    if text.count(old_finalize) != 1:
         raise RuntimeError("GDN finalize anchor changed; refusing to patch")
-    text = text.replace(OLD, NEW, 1)
-    return text.replace(OLD_FINALIZE, NEW_FINALIZE, 1)
+    text = text.replace(old, new, 1)
+    return text.replace(old_finalize, new_finalize, 1)
 
 
 def main() -> None:

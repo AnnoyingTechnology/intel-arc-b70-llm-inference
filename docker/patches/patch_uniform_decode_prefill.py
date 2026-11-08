@@ -63,6 +63,11 @@ new_classifier = '''    @staticmethod
             else force_uniform_decode
         )
 '''
+# v0.32 only reformatted this docstring; the classifier still lacks the guard.
+if old_classifier not in text:
+    old_classifier = old_classifier.replace(
+        '        """\n        Checks if', '        """Checks if'
+    )
 if text.count(old_classifier) != 1:
     raise RuntimeError("uniform-decode classifier anchor changed")
 text = text.replace(old_classifier, new_classifier, 1)
